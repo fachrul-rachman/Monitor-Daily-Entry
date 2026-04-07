@@ -27,8 +27,13 @@
         </div>
 
         {{-- Login form --}}
-        {{-- TODO: Ganti form action dengan wire:submit.prevent="login" --}}
-        <form method="POST" action="{{ route('login.store') }}" class="flex flex-col gap-5" x-data="{ showPassword: false, loading: false }">
+        <form
+            method="POST"
+            action="{{ route('login.store') }}"
+            class="flex flex-col gap-5"
+            x-data="{ showPassword: false, loading: false }"
+            @submit="loading = true"
+        >
             @csrf
 
             {{-- Email --}}
@@ -102,13 +107,11 @@
             </div>
 
             {{-- Submit button --}}
-            {{-- TODO: Tambahkan wire:loading directives --}}
             <button
                 type="submit"
                 class="btn-primary w-full"
                 :class="{ 'btn-disabled': loading }"
                 :disabled="loading"
-                @click="loading = true"
                 data-test="login-button"
             >
                 <svg x-show="loading" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24" style="display: none;">

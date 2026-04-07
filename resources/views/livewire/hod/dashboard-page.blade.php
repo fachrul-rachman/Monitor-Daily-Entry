@@ -6,24 +6,127 @@
 
 <x-layouts.app title="Dashboard HoD">
     @php
-        $todayDate = 'Senin, 7 Juli 2025';
+        $today = \Illuminate\Support\Carbon::today();
+        $todayDate = $today->translatedFormat('l, j F Y');
+
+        $setting = \App\Models\ReportSetting::current();
+        $planWindowInfo = \Illuminate\Support\Carbon::parse($setting->plan_open_time)->format('H:i').' – '.\Illuminate\Support\Carbon::parse($setting->plan_close_time)->format('H:i');
+        $realizationWindowInfo = \Illuminate\Support\Carbon::parse($setting->realization_open_time)->format('H:i').' – '.\Illuminate\Support\Carbon::parse($setting->realization_close_time)->format('H:i');
+
+        $hod = auth()->user();
+
+        $assignedDivisionIds = \App\Models\HodAssignment::query()
+            ->where('hod_id', $hod->id)
+            ->pluck('division_id')
+            ->filter()
+            ->values()
+            ->all();
+
+        if (empty($assignedDivisionIds) && $hod->division_id) {
+            $assignedDivisionIds = [(int) $hod->division_id];
+        }
+
+        $scoreDate = \App\Models\HealthScore::query()
+            ->where('scope_type', 'user')
+            ->where('scope_id', $hod->id)
+            ->max('score_date');
+
+        $scoreDate = $scoreDate ? \Illuminate\Support\Carbon::parse($scoreDate) : \Illuminate\Support\Carbon::yesterday();
+
+        $periodFrom = $scoreDate->copy()->subDays(7);
+        $periodTo = $scoreDate->copy();
+
+        $todayEntry = \App\Models\DailyEntry::query()
+            ->where('user_id', $hod->id)
+            ->whereDate('entry_date', $today->toDateString())
+            ->first(['id', 'plan_status', 'realization_status']);
+
+        $planFilled = (bool) ($todayEntry && in_array($todayEntry->plan_status, ['submitted', 'late'], true));
+        $realizationFilled = (bool) ($todayEntry && in_array($todayEntry->realization_status, ['submitted', 'late'], true));
+
+        $planTodayCount = $todayEntry
+            ? \App\Models\DailyEntryItem::query()->where('daily_entry_id', $todayEntry->id)->count()
+            : 0;
+
+        $realizationPending = $todayEntry
+            ? \App\Models\DailyEntryItem::query()
+                ->where('daily_entry_id', $todayEntry->id)
+                ->where('realization_status', 'draft')
+                ->count()
+            : 0;
+
+        $divisionManagers = \App\Models\User::query()
+            ->whereIn('division_id', $assignedDivisionIds)
+            ->where('role', 'manager')
+            ->where('status', 'active')
+            ->get(['id', 'name']);
+
+        $managerFindingRows = \App\Models\Finding::query()
+            ->whereBetween('finding_date', [$periodFrom->toDateString(), $periodTo->toDateString()])
+            ->whereIn('severity', ['medium', 'high'])
+            ->whereIn('user_id', $divisionManagers->pluck('id')->all())
+            ->get(['id', 'user_id', 'severity', 'title', 'finding_date'])
+            ->groupBy('user_id');
+
+        $managerFindingsCount = (int) $managerFindingRows->flatten(1)->count();
+
         $summaryCards = [
-            'plan_today' => 2,
-            'realization_pending' => 2,
-            'manager_findings' => 4,
-            'stagnant_roadmap' => 1,
+            'plan_today' => $planTodayCount,
+            'realization_pending' => $realizationPending,
+            'manager_findings' => $managerFindingsCount,
+            'stagnant_roadmap' => 0,
         ];
-        $planFilled = false; // dummy: plan belum diisi
-        $realizationFilled = false;
-        $activeBigRocks = [
-            ['title' => 'Optimasi Proses Operasional Q3', 'roadmap_count' => 4, 'progress' => 60, 'status' => 'on_track'],
-            ['title' => 'Pengembangan SDM Tim', 'roadmap_count' => 3, 'progress' => 35, 'status' => 'at_risk'],
-        ];
-        $managersNeedingAttention = [
-            ['name' => 'Budi Santoso', 'findings' => 4, 'severity' => 'major', 'latest' => 'Missing plan 3 hari'],
-            ['name' => 'Rudi Hermawan', 'findings' => 2, 'severity' => 'medium', 'latest' => 'Late submission berulang'],
-            ['name' => 'Eko Prasetyo', 'findings' => 1, 'severity' => 'minor', 'latest' => 'Format tidak sesuai'],
-        ];
+
+        $activeBigRocks = \App\Models\BigRock::query()
+            ->where('user_id', $hod->id)
+            ->where('status', 'active')
+            ->orderByDesc('id')
+            ->limit(6)
+            ->get(['id', 'title'])
+            ->map(function ($br) use ($periodFrom, $periodTo) {
+                $roadmapCount = \App\Models\RoadmapItem::query()->where('big_rock_id', $br->id)->count();
+                $worked = \App\Models\DailyEntryItem::query()
+                    ->whereNotNull('roadmap_item_id')
+                    ->where('big_rock_id', $br->id)
+                    ->whereIn('realization_status', ['done', 'partial'])
+                    ->whereHas('entry', function ($q) use ($periodFrom, $periodTo) {
+                        $q->whereBetween('entry_date', [$periodFrom->toDateString(), $periodTo->toDateString()]);
+                    })
+                    ->distinct('roadmap_item_id')
+                    ->count('roadmap_item_id');
+
+                $progress = $roadmapCount > 0 ? (int) round(($worked / $roadmapCount) * 100) : 0;
+
+                $status = $progress >= 70 ? 'on_track' : ($progress >= 40 ? 'at_risk' : 'blocked');
+
+                return [
+                    'title' => $br->title,
+                    'roadmap_count' => $roadmapCount,
+                    'progress' => $progress,
+                    'status' => $status,
+                ];
+            })
+            ->all();
+
+        $managersNeedingAttention = $divisionManagers
+            ->map(function ($mgr) use ($managerFindingRows) {
+                $rows = $managerFindingRows->get($mgr->id, collect());
+                $findings = $rows->count();
+
+                $maxSeverity = $rows->contains('severity', 'high') ? 'major' : ($rows->contains('severity', 'medium') ? 'medium' : 'minor');
+                $latest = $rows->sortByDesc('finding_date')->sortByDesc('id')->first();
+
+                return [
+                    'name' => $mgr->name,
+                    'findings' => $findings,
+                    'severity' => $maxSeverity,
+                    'latest' => $latest['title'] ?? '—',
+                ];
+            })
+            ->sortByDesc('findings')
+            ->take(6)
+            ->values()
+            ->all();
     @endphp
 
     <x-ui.page-header title="Dashboard" :description="$todayDate" />
@@ -46,7 +149,7 @@
                     </div>
                     <div>
                         <p class="text-sm font-semibold text-primary">Plan Hari Ini Belum Diisi</p>
-                        <p class="text-xs text-primary/70">Window Plan: 08:00 – 17:00</p>
+                        <p class="text-xs text-primary/70">Window Plan: {{ $planWindowInfo }}</p>
                     </div>
                 </div>
                 {{-- TODO: href ke daily-entry --}}
@@ -62,7 +165,7 @@
                     </div>
                     <div>
                         <p class="text-sm font-semibold text-warning">Realisasi Belum Diisi</p>
-                        <p class="text-xs text-warning/70">Window Realisasi: 15:00 – 23:59</p>
+                        <p class="text-xs text-warning/70">Window Realisasi: {{ $realizationWindowInfo }}</p>
                     </div>
                 </div>
                 <a href="#" class="btn-primary shrink-0">Isi Realisasi</a>

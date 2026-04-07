@@ -3,21 +3,12 @@
     Component: App\Livewire\Admin\UserImportModal
 --}}
 
-@php
-    // Dummy — Step 2 preview data
-    $showPreview = false;
-    $totalRows = 10;
-    $validRows = 8;
-    $invalidRows = 2;
-    $previewData = [
-        ['row' => 1, 'name' => 'John Doe', 'email' => 'john@perusahaan.com', 'role' => 'Manager', 'division' => 'IT', 'valid' => true, 'reason' => ''],
-        ['row' => 2, 'name' => 'Jane Smith', 'email' => 'jane@perusahaan.com', 'role' => 'HoD', 'division' => 'Keuangan', 'valid' => true, 'reason' => ''],
-        ['row' => 3, 'name' => '', 'email' => 'invalid', 'role' => 'Manager', 'division' => '', 'valid' => false, 'reason' => 'Nama kosong, email tidak valid, divisi kosong'],
-    ];
-@endphp
-
 <div
-    x-data="{ showModal: true, step: 1, fileSelected: false }"
+    x-data="{
+        showModal: @entangle('show'),
+        showPreview: @entangle('showPreview'),
+        fileSelected: false
+    }"
     x-show="showModal"
     x-transition:enter="transition ease-out duration-200"
     x-transition:enter-start="opacity-0"
@@ -32,18 +23,21 @@
             <h3 class="text-lg font-semibold text-text" style="font-family: 'DM Sans', sans-serif;">
                 Bulk Upload User
             </h3>
-            <button @click="showModal = false" class="text-muted hover:text-text text-lg">✕</button>
+            <button @click="showModal = false" class="text-muted hover:text-text text-lg">&times;</button>
         </div>
 
         {{-- Step 1: Upload --}}
-        <div x-show="step === 1">
+        <div x-show="!showPreview">
             {{-- Download template --}}
             <div class="mb-4">
-                {{-- TODO: wire:click="downloadTemplate" --}}
-                <a href="#" class="text-sm text-primary font-medium hover:underline inline-flex items-center gap-1">
+                <button
+                    type="button"
+                    wire:click="downloadTemplate"
+                    class="text-sm text-primary font-medium hover:underline inline-flex items-center gap-1"
+                >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                     Download Template Excel
-                </a>
+                </button>
             </div>
 
             {{-- Upload area --}}
@@ -51,31 +45,42 @@
                 <svg class="w-10 h-10 text-muted mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                 <p class="text-sm text-text font-medium">Drag & drop file di sini</p>
                 <p class="text-xs text-muted mt-1">atau</p>
-                {{-- TODO: wire:model="file" --}}
                 <label class="mt-2 btn-secondary inline-flex cursor-pointer">
                     Pilih File
-                    <input type="file" class="hidden" accept=".xlsx,.xls,.csv" @change="fileSelected = true">
+                    <input
+                        type="file"
+                        class="hidden"
+                        accept=".xlsx,.xls,.csv"
+                        wire:model="file"
+                        @change="fileSelected = true"
+                    >
                 </label>
                 <p class="text-xs text-muted mt-2">Format: .xlsx, .xls, .csv</p>
+                @error('file') <p class="text-xs text-danger mt-2">{{ $message }}</p> @enderror
             </div>
 
             <div class="mt-4 flex gap-3">
                 <button type="button" @click="showModal = false" class="btn-secondary flex-1">Batal</button>
-                {{-- TODO: wire:click="previewImport" --}}
                 <button
                     type="button"
-                    class="btn-primary flex-1"
+                    class="btn-primary flex-1 flex items-center justify-center gap-2"
                     :class="{ 'btn-disabled': !fileSelected }"
                     :disabled="!fileSelected"
-                    @click="step = 2"
+                    wire:click="previewImport"
+                    wire:target="previewImport"
+                    wire:loading.attr="disabled"
                 >
-                    Preview
+                    <span wire:loading.remove wire:target="previewImport">Preview</span>
+                    <span wire:loading wire:target="previewImport" class="flex items-center gap-2">
+                        <span class="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
+                        <span>Memproses...</span>
+                    </span>
                 </button>
             </div>
         </div>
 
         {{-- Step 2: Preview --}}
-        <div x-show="step === 2" style="display:none;">
+        <div x-show="showPreview" x-cloak>
             {{-- Summary --}}
             <div class="flex gap-3 mb-4">
                 <div class="flex-1 bg-app-bg rounded-lg p-3 text-center">
@@ -133,10 +138,22 @@
             </div>
 
             <div class="flex gap-3">
-                <button type="button" @click="step = 1" class="btn-secondary flex-1">← Kembali</button>
-                {{-- TODO: wire:click="applyImport" --}}
-                <button type="button" class="btn-primary flex-1" {{ $validRows > 0 ? '' : 'disabled' }}>
-                    Terapkan {{ $validRows }} Row Valid
+                <button type="button" @click="showPreview = false" class="btn-secondary flex-1">← Kembali</button>
+                <button
+                    type="button"
+                    class="btn-primary flex-1 flex items-center justify-center gap-2"
+                    wire:click="applyImport"
+                    wire:target="applyImport"
+                    wire:loading.attr="disabled"
+                    @disabled($validRows === 0)
+                >
+                    <span wire:loading.remove wire:target="applyImport">
+                        Terapkan {{ $validRows }} Row Valid
+                    </span>
+                    <span wire:loading wire:target="applyImport" class="flex items-center gap-2">
+                        <span class="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
+                        <span>Mengimpor...</span>
+                    </span>
                 </button>
             </div>
         </div>

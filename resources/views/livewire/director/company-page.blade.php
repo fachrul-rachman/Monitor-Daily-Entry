@@ -6,24 +6,101 @@
 
 <x-layouts.app title="Company">
     @php
+        // MVP: periode default 7 hari kerja terakhir yang sudah dihitung metrics-nya.
+        $latestScoreDate = \App\Models\HealthScore::query()
+            ->where('scope_type', 'company')
+            ->max('score_date');
+
+        $periodTo = $latestScoreDate ? \Illuminate\Support\Carbon::parse($latestScoreDate) : \Illuminate\Support\Carbon::yesterday();
+        $periodFrom = $periodTo->copy()->subDays(7);
+
+        $companyScore = \App\Models\HealthScore::query()
+            ->where('scope_type', 'company')
+            ->whereDate('score_date', $periodTo->toDateString())
+            ->value('score');
+
+        $companyScore = $companyScore ?? 0;
+
+        $findingsQuery = \App\Models\Finding::query()
+            ->with(['user:id,name', 'division:id,name'])
+            ->whereBetween('finding_date', [$periodFrom->toDateString(), $periodTo->toDateString()]);
+
+        $totalExceptions = (clone $findingsQuery)->count();
+        $highCount = (clone $findingsQuery)->where('severity', 'high')->count();
+        $mediumCount = (clone $findingsQuery)->where('severity', 'medium')->count();
+        $lowCount = (clone $findingsQuery)->where('severity', 'low')->count();
+
+        // On-time rate (sederhana untuk MVP): tidak late dan tidak missing (plan & realisasi) di hari kerja.
+        $usersCount = \App\Models\User::query()->whereIn('role', ['hod', 'manager'])->where('status', 'active')->count();
+        $workdays = [];
+        $cursor = $periodFrom->copy()->startOfDay();
+        while ($cursor->lte($periodTo)) {
+            if (! $cursor->isWeekend()) {
+                $workdays[] = $cursor->toDateString();
+            }
+            $cursor->addDay();
+        }
+        $required = max($usersCount * max(count($workdays), 1), 1);
+        $onTime = \App\Models\DailyEntry::query()
+            ->whereIn('user_id', \App\Models\User::query()->whereIn('role', ['hod', 'manager'])->where('status', 'active')->select('id'))
+            ->whereIn('entry_date', $workdays)
+            ->whereNotIn('plan_status', ['late', 'missing'])
+            ->whereNotIn('realization_status', ['late', 'missing'])
+            ->count();
+        $onTimeRate = (int) round(($onTime / $required) * 100).'%';
+
         $summaryMetrics = [
-            'health' => 58,
-            'total_exceptions' => 24,
-            'major' => 5,
-            'medium' => 11,
-            'minor' => 8,
-            'on_time_rate' => '82%',
+            'health' => (int) $companyScore,
+            'total_exceptions' => $totalExceptions,
+            // UI legacy: major/medium/minor -> map dari high/medium/low
+            'major' => $highCount,
+            'medium' => $mediumCount,
+            'minor' => $lowCount,
+            'on_time_rate' => $onTimeRate,
         ];
-        $recentFindings = [
-            ['title' => 'Missing plan 3 hari berturut', 'user' => 'Budi Santoso', 'division' => 'Operasional', 'severity' => 'major', 'date' => '7 Jul 2025'],
-            ['title' => 'Blocked realization tanpa alasan', 'user' => 'Ahmad Fauzi', 'division' => 'IT', 'severity' => 'major', 'date' => '7 Jul 2025'],
-            ['title' => 'Late submission berulang', 'user' => 'Rudi Hermawan', 'division' => 'Operasional', 'severity' => 'medium', 'date' => '6 Jul 2025'],
-        ];
-        $divisionContributions = [
-            ['name' => 'Operasional', 'findings' => 12, 'percentage' => 50],
-            ['name' => 'IT', 'findings' => 7, 'percentage' => 29],
-            ['name' => 'Keuangan', 'findings' => 5, 'percentage' => 21],
-        ];
+
+        $recentFindings = (clone $findingsQuery)
+            ->whereIn('severity', ['medium', 'high'])
+            ->orderByDesc('finding_date')
+            ->orderByDesc('id')
+            ->limit(10)
+            ->get()
+            ->map(function ($f) {
+                $severity = $f->severity === 'high' ? 'major' : ($f->severity === 'medium' ? 'medium' : 'minor');
+                return [
+                    'title' => $f->title,
+                    'user' => $f->user?->name ?? '—',
+                    'division' => $f->division?->name ?? '—',
+                    'severity' => $severity,
+                    'date' => \Illuminate\Support\Carbon::parse($f->finding_date)->translatedFormat('j M Y'),
+                ];
+            })
+            ->all();
+
+        $divisionRows = (clone $findingsQuery)
+            ->whereIn('severity', ['medium', 'high'])
+            ->whereNotNull('division_id')
+            ->selectRaw('division_id, count(*) as total')
+            ->groupBy('division_id')
+            ->orderByDesc('total')
+            ->get();
+
+        $divisionNameById = \App\Models\Division::query()
+            ->whereIn('id', $divisionRows->pluck('division_id')->all())
+            ->pluck('name', 'id')
+            ->all();
+
+        $divisionTotal = max((int) $divisionRows->sum('total'), 1);
+        $divisionContributions = $divisionRows->map(function ($row) use ($divisionTotal, $divisionNameById) {
+            $divisionName = $divisionNameById[$row->division_id] ?? '—';
+            $percentage = (int) round(($row->total / $divisionTotal) * 100);
+
+            return [
+                'name' => $divisionName,
+                'findings' => (int) $row->total,
+                'percentage' => $percentage,
+            ];
+        })->all();
     @endphp
 
     {{-- Page Header --}}

@@ -1,316 +1,460 @@
 {{--
-    HoD Daily Entry Page — HALAMAN PALING PENTING
-    Route: /hod/daily-entry
-    Component: App\Livewire\Hod\DailyEntryPage
-    Clean, focused, mobile-first
+    HoD Daily Entry Page (content only, layout via components.layouts.app)
 --}}
 
-<x-layouts.app title="Entry Harian">
-    @php
-        $todayDate = 'Senin, 7 Juli 2025';
-        $planWindowOpen = '08:00';
-        $planWindowClose = '17:00';
-        $realizationWindowOpen = '15:00';
-        $realizationWindowClose = '23:59';
-        $isPlanWindowOpen = true;
-        $isRealizationWindowOpen = false;
-
-        $bigRocks = [
-            ['id' => 1, 'title' => 'Optimasi Proses Operasional Q3'],
-            ['id' => 2, 'title' => 'Pengembangan SDM Tim'],
-        ];
-        $roadmapsByBigRock = [
-            1 => [
-                ['id' => 1, 'title' => 'Implementasi SOP Baru'],
-                ['id' => 2, 'title' => 'Audit Proses Existing'],
-            ],
-            2 => [
-                ['id' => 3, 'title' => 'Training Tim Lapangan'],
-                ['id' => 4, 'title' => 'Evaluasi Kompetensi'],
-            ],
-        ];
-
-        $existingPlans = [
-            ['id' => 1, 'title' => 'Review dokumen procurement', 'description' => 'Mereview dokumen procurement vendor baru Q3 untuk memastikan compliance.', 'big_rock' => 'Optimasi Proses Operasional Q3', 'roadmap' => 'Implementasi SOP Baru', 'planned_hours' => 3, 'status' => 'submitted'],
-            ['id' => 2, 'title' => 'Koordinasi tim lapangan', 'description' => 'Meeting dengan supervisor lapangan terkait SOP baru.', 'big_rock' => 'Pengembangan SDM Tim', 'roadmap' => 'Training Tim Lapangan', 'planned_hours' => 2, 'status' => 'submitted'],
-        ];
-    @endphp
-
+<div>
     <x-ui.page-header title="Entry Harian" :description="$todayDate" />
 
     {{-- Window Status Bar --}}
     <div class="mb-6 flex flex-wrap gap-3">
-        <div class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm {{ $isPlanWindowOpen ? 'bg-success-bg text-success' : 'bg-app-bg text-muted' }}">
-            <span class="w-2 h-2 rounded-full {{ $isPlanWindowOpen ? 'bg-success' : 'bg-muted' }}"></span>
-            Plan: {{ $planWindowOpen }} – {{ $planWindowClose }}
-            <span class="font-semibold">{{ $isPlanWindowOpen ? 'Terbuka' : 'Tertutup' }}</span>
+        <div class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm {{ $planWindowOpen ? 'bg-success-bg text-success' : 'bg-app-bg text-muted' }}">
+            <span class="w-2 h-2 rounded-full {{ $planWindowOpen ? 'bg-success' : 'bg-muted' }}"></span>
+            <span>Plan: {{ $planWindowInfo }}</span>
+            <span class="font-semibold">
+                @if($planWindowOpen)
+                    Terbuka
+                @elseif($planWindowBefore)
+                    Belum dibuka
+                @else
+                    Tertutup
+                @endif
+            </span>
         </div>
-        <div class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm {{ $isRealizationWindowOpen ? 'bg-success-bg text-success' : 'bg-app-bg text-muted' }}">
-            <span class="w-2 h-2 rounded-full {{ $isRealizationWindowOpen ? 'bg-success' : 'bg-muted' }}"></span>
-            Realisasi: {{ $realizationWindowOpen }} – {{ $realizationWindowClose }}
-            <span class="font-semibold">{{ $isRealizationWindowOpen ? 'Terbuka' : 'Tertutup' }}</span>
+        <div class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm {{ $realizationWindowOpen ? 'bg-success-bg text-success' : 'bg-app-bg text-muted' }}">
+            <span class="w-2 h-2 rounded-full {{ $realizationWindowOpen ? 'bg-success' : 'bg-muted' }}"></span>
+            <span>Realisasi: {{ $realizationWindowInfo }}</span>
+            <span class="font-semibold">
+                @if($realizationWindowOpen)
+                    Terbuka
+                @elseif($realizationWindowBefore)
+                    Belum dibuka
+                @else
+                    Tertutup
+                @endif
+            </span>
         </div>
     </div>
 
     {{-- Tabs --}}
-    <div x-data="{ tab: 'plan' }">
+    <div x-data="{ tab: @entangle('activeTab') }">
         {{-- Tab buttons --}}
         <div class="flex border-b border-border mb-6">
             <button
-                @click="tab = 'plan'"
+                @click="$wire.switchTab('plan')"
                 :class="tab === 'plan' ? 'border-b-2 border-primary text-primary font-semibold' : 'text-muted hover:text-text'"
                 class="px-4 py-3 text-sm min-h-[44px] transition-colors"
             >Plan</button>
             <button
-                @click="tab = 'realisasi'"
+                @click="$wire.switchTab('realisasi')"
                 :class="tab === 'realisasi' ? 'border-b-2 border-primary text-primary font-semibold' : 'text-muted hover:text-text'"
                 class="px-4 py-3 text-sm min-h-[44px] transition-colors"
             >Realisasi</button>
         </div>
 
-        {{-- ==================== TAB: PLAN ==================== --}}
-        <div x-show="tab === 'plan'" x-data="{ showAddForm: false, selectedBigRock: '' }">
-            {{-- Existing plan items --}}
-            <div class="space-y-3 mb-6">
-                @forelse($existingPlans as $plan)
-                    <x-ui.card>
-                        <div class="flex items-start justify-between">
-                            <div class="flex-1">
-                                <p class="font-semibold text-text text-sm">{{ $plan['title'] }}</p>
-                                <p class="text-xs text-muted mt-0.5 line-clamp-2">{{ $plan['description'] }}</p>
+        {{-- TAB: PLAN --}}
+        <div x-show="tab === 'plan'">
+            <x-ui.card>
+                <h3 class="text-sm font-semibold text-text mb-3" style="font-family: 'DM Sans', sans-serif;">Rencana Hari Ini</h3>
+                <p class="text-xs text-muted mb-4">
+                    Rencana yang diisi di sini <span class="font-semibold">wajib terkait Big Rock</span> Anda.
+                </p>
+
+                @if($planWindowBefore)
+                    <div class="rounded-xl border border-border bg-app-bg px-4 py-3 mb-4">
+                        <p class="text-sm font-semibold text-text">Plan belum dibuka</p>
+                        <p class="text-xs text-muted mt-1">Jam plan: {{ $planWindowInfo }}. Silakan kembali saat jam buka.</p>
+                    </div>
+                @else
+                {{-- Daftar rencana yang sudah tersimpan hari ini --}}
+                @if(! empty($items))
+                    <div class="mb-4 space-y-2">
+                        <p class="text-xs text-muted">Rencana yang sudah tersimpan:</p>
+                        @foreach($items as $item)
+                            <div class="flex items-center justify-between px-3 py-2 rounded-lg border border-border bg-app-bg">
+                                <div class="min-w-0">
+                                    <p class="text-xs font-medium text-text truncate">{{ $item['title'] }}</p>
+                                    <p class="text-[11px] text-muted truncate">
+                                        {{ $item['big_rock'] ?? 'Tanpa Big Rock' }}
+                                        @if($item['roadmap'])
+                                            · {{ $item['roadmap'] }}
+                                        @endif
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="btn-secondary text-xs px-3 py-2"
+                                    wire:click="startEditPlan({{ $item['id'] }})"
+                                    wire:target="startEditPlan"
+                                    wire:loading.attr="disabled"
+                                >
+                                    <span wire:loading.remove wire:target="startEditPlan">Edit</span>
+                                    <span wire:loading wire:target="startEditPlan">Membuka...</span>
+                                </button>
                             </div>
-                            <x-ui.status-badge :status="$plan['status']" />
+                        @endforeach
+                    </div>
+                @endif
+
+                <div class="flex justify-between items-center mb-3">
+                    <p class="text-xs text-muted">
+                        @if(! $planFormOpen)
+                            Form tidak langsung muncul supaya halaman tidak penuh. Klik <span class="font-semibold">Rencana baru</span> untuk mulai.
+                        @else
+                            Isi form, lalu klik <span class="font-semibold">Simpan Rencana</span>.
+                        @endif
+                    </p>
+                    <div class="flex items-center gap-2">
+                        <button
+                            type="button"
+                            class="btn-secondary text-xs px-3 py-2"
+                            wire:click="startCreatePlan"
+                            wire:target="startCreatePlan"
+                            wire:loading.attr="disabled"
+                            @disabled($planWindowBefore || empty($bigRocks))
+                        >
+                            <span wire:loading.remove wire:target="startCreatePlan">+ Rencana baru</span>
+                            <span wire:loading wire:target="startCreatePlan">Membuka...</span>
+                        </button>
+                        @if($planFormOpen)
+                            <button
+                                type="button"
+                                class="btn-secondary text-xs px-3 py-2"
+                                wire:click="closePlanForm"
+                                wire:target="closePlanForm"
+                                wire:loading.attr="disabled"
+                            >
+                                <span wire:loading.remove wire:target="closePlanForm">Tutup</span>
+                                <span wire:loading wire:target="closePlanForm">...</span>
+                            </button>
+                        @endif
+                    </div>
+                </div>
+
+                @if($planWindowBefore)
+                    <p class="text-xs text-muted mb-4">
+                        Plan hanya dapat diisi setelah jam buka: {{ $planWindowInfo }}.
+                    </p>
+                @elseif(! $planFormOpen)
+                    <div class="rounded-xl border border-border bg-app-bg px-4 py-3 mb-4">
+                        <p class="text-sm font-semibold text-text">Belum ada form yang terbuka</p>
+                        <p class="text-xs text-muted mt-1">Klik <span class="font-semibold">Rencana baru</span> untuk mulai mengisi.</p>
+                    </div>
+                @endif
+
+                @if($planFormOpen && ! $planWindowBefore)
+                <div class="space-y-4">
+                    {{-- Big Rock --}}
+                    <div>
+                        <label class="label">Big Rock <span class="text-danger">*</span></label>
+                        <select
+                            class="input"
+                            wire:model="bigRockId"
+                            wire:change="selectBigRock($event.target.value)"
+                            @disabled($planWindowBefore || empty($bigRocks))
+                        >
+                            <option value="">Pilih Big Rock...</option>
+                            @foreach($bigRocks as $br)
+                                <option value="{{ $br['id'] }}">{{ $br['title'] }}</option>
+                            @endforeach
+                        </select>
+                        @if(empty($bigRocks))
+                            <p class="text-xs text-warning mt-1">Belum ada Big Rock aktif. Tambahkan Big Rock terlebih dahulu.</p>
+                        @endif
+                        @error('bigRockId') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- Roadmap --}}
+                    <div>
+                        <label class="label">Roadmap</label>
+                        <select
+                            class="input"
+                            wire:model="roadmapItemId"
+                            wire:key="roadmap-select-{{ $bigRockId ?? 'none' }}"
+                            @disabled($planWindowBefore)
+                        >
+                            <option value="">Pilih Roadmap...</option>
+                            @foreach($roadmapItems as $item)
+                                <option value="{{ $item['id'] }}">{{ $item['title'] }}</option>
+                            @endforeach
+                        </select>
+                        @if(! empty($bigRocks) && empty($roadmapItems) && $bigRockId)
+                            <p class="text-xs text-muted mt-1">Big Rock ini belum memiliki roadmap. Anda tetap bisa mengisi plan.</p>
+                        @endif
+                        @error('roadmapItemId') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- Judul Plan --}}
+                    <div>
+                        <label class="label">Judul Rencana <span class="text-danger">*</span></label>
+                        <input
+                            type="text"
+                            class="input"
+                            placeholder="Contoh: Review SOP proses klaim"
+                            wire:model.defer="planTitle"
+                            @disabled($planWindowBefore)
+                        />
+                        @error('planTitle') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- Deskripsi Plan --}}
+                    <div>
+                        <label class="label">Deskripsi Rencana</label>
+                        <textarea
+                            class="input min-h-[120px]"
+                            placeholder="Contoh: Review SOP klaim untuk cabang utama dan identifikasi bottleneck..."
+                            wire:model.defer="planText"
+                            @disabled($planWindowBefore)
+                        ></textarea>
+                        @error('planText') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- Alasan keterkaitan dengan Big Rock --}}
+                    <div>
+                        <label class="label">Kenapa rencana ini terkait Big Rock tersebut? <span class="text-danger">*</span></label>
+                        <textarea
+                            class="input min-h-[80px]"
+                            placeholder="Contoh: Review ini bagian dari tahapan implementasi SOP baru di seluruh cabang..."
+                            wire:model.defer="planRelationReason"
+                            @disabled($planWindowBefore)
+                        ></textarea>
+                        @error('planRelationReason') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    @if($storedPlanStatus)
+                        <p class="text-xs text-muted">
+                            Status plan hari ini:
+                            <span class="font-semibold text-text">{{ ucfirst($storedPlanStatus) }}</span>
+                        </p>
+                    @endif
+
+                    <div class="flex gap-3 pt-2">
+                        <button
+                            type="button"
+                            class="btn-primary flex-1 flex items-center justify-center gap-2"
+                            wire:click="savePlan"
+                            wire:target="savePlan"
+                            wire:loading.attr="disabled"
+                            @disabled($planWindowBefore || empty($bigRocks))
+                        >
+                            <span wire:loading.remove wire:target="savePlan">
+                                Simpan Rencana
+                                @if($planWindowAfter)
+                                    <span class="text-xs font-normal text-warning ml-1">(Akan dianggap Late)</span>
+                                @endif
+                            </span>
+                            <span wire:loading wire:target="savePlan" class="flex items-center gap-2">
+                                <span class="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
+                                <span>Menyimpan...</span>
+                            </span>
+                        </button>
+                    </div>
+
+                </div>
+                @endif
+                @endif
+            </x-ui.card>
+        </div>
+
+        {{-- TAB: REALISASI --}}
+        <div x-show="tab === 'realisasi'">
+            <x-ui.card>
+                <h3 class="text-sm font-semibold text-text mb-3" style="font-family: 'DM Sans', sans-serif;">Realisasi Hari Ini</h3>
+                <p class="text-xs text-muted mb-4">
+                    Pilih rencana yang ingin Anda evaluasi, lalu jelaskan realisasinya.
+                </p>
+
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-xs text-muted">
+                        @if($realizationWindowBefore)
+                            Realisasi belum dibuka. Anda bisa mulai mengisi saat jam {{ $realizationWindowInfo }}.
+                        @elseif(empty($items) && ! $realizationFormOpen)
+                            Belum ada rencana hari ini. Isi dulu di tab Plan.
+                        @elseif(! $realizationFormOpen)
+                            Form tidak langsung muncul supaya halaman tidak penuh. Klik <span class="font-semibold">Realisasi baru</span> untuk mulai.
+                        @else
+                            Pilih rencana, lalu isi realisasinya.
+                        @endif
+                    </p>
+                    @if(! $realizationWindowBefore)
+                        <div class="flex items-center gap-2">
+                            <button
+                                type="button"
+                                class="btn-secondary text-xs px-3 py-2"
+                                wire:click="startRealization"
+                                wire:target="startRealization"
+                                wire:loading.attr="disabled"
+                            >
+                                <span wire:loading.remove wire:target="startRealization">+ Realisasi baru</span>
+                                <span wire:loading wire:target="startRealization">Membuka...</span>
+                            </button>
+                            @if($realizationFormOpen)
+                                <button
+                                    type="button"
+                                    class="btn-secondary text-xs px-3 py-2"
+                                    wire:click="closeRealizationForm"
+                                    wire:target="closeRealizationForm"
+                                    wire:loading.attr="disabled"
+                                >
+                                    <span wire:loading.remove wire:target="closeRealizationForm">Tutup</span>
+                                    <span wire:loading wire:target="closeRealizationForm">...</span>
+                                </button>
+                            @endif
                         </div>
-                        {{-- Hierarchy visual --}}
-                        <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
-                            <span class="badge-primary">{{ $plan['big_rock'] }}</span>
-                            <svg class="w-3 h-3 text-muted shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                            <span class="badge-muted">{{ $plan['roadmap'] }}</span>
-                        </div>
-                        <div class="mt-2 text-xs text-muted">
-                            Jam rencana: {{ $plan['planned_hours'] }} jam
-                        </div>
-                        @if($isPlanWindowOpen)
-                            <div class="mt-3 pt-3 border-t border-border flex gap-2">
-                                {{-- TODO: wire:click="editPlan({{ $plan['id'] }})" --}}
-                                <button class="text-sm text-primary font-medium">Edit</button>
-                                {{-- TODO: wire:click="removePlan({{ $plan['id'] }})" --}}
-                                <button class="text-sm text-danger font-medium ml-auto">Hapus</button>
+                    @endif
+                </div>
+
+                @if($realizationNotice)
+                    <div class="rounded-xl border border-border bg-app-bg px-4 py-3 mb-4">
+                        <p class="text-xs text-muted">{{ $realizationNotice }}</p>
+                    </div>
+                @endif
+
+                @if($realizationWindowBefore)
+                    <div class="rounded-xl border border-border bg-app-bg px-4 py-3 mb-4">
+                        <p class="text-sm font-semibold text-text">Realisasi belum dibuka</p>
+                        <p class="text-xs text-muted mt-1">Jam realisasi: {{ $realizationWindowInfo }}.</p>
+                    </div>
+                @elseif(empty($items) && ! $realizationFormOpen)
+                    <div class="rounded-xl border border-border bg-app-bg px-4 py-3 mb-4">
+                        <p class="text-sm font-semibold text-text">Belum ada rencana</p>
+                        <p class="text-xs text-muted mt-1">Isi rencana dulu di tab Plan, lalu kembali ke sini.</p>
+                    </div>
+                @elseif(! $realizationFormOpen)
+                    <div class="rounded-xl border border-border bg-app-bg px-4 py-3 mb-4">
+                        <p class="text-sm font-semibold text-text">Belum ada form yang terbuka</p>
+                        <p class="text-xs text-muted mt-1">Klik <span class="font-semibold">Realisasi baru</span> untuk mulai mengisi.</p>
+                    </div>
+                @endif
+
+                @if($realizationFormOpen && ! $realizationWindowBefore)
+                <div class="space-y-4">
+                    {{-- Pilih rencana yang akan dievaluasi --}}
+                    <div>
+                        <label class="label">Pilih Rencana <span class="text-danger">*</span></label>
+                        <select
+                            class="input"
+                            wire:model="selectedItemId"
+                            wire:change="selectRealizationItem($event.target.value)"
+                            @disabled($realizationWindowBefore || empty($items))
+                        >
+                            <option value="">Pilih rencana...</option>
+                            @foreach($items as $item)
+                                <option value="{{ $item['id'] }}">{{ $item['title'] }}</option>
+                            @endforeach
+                        </select>
+                        @if(empty($items))
+                            <p class="text-xs text-warning mt-1">
+                                Belum ada rencana hari ini. Isi dulu di tab Plan.
+                            </p>
+                        @endif
+                    </div>
+
+                    {{-- Status Realisasi --}}
+                    <div>
+                        <label class="label">Status Realisasi <span class="text-danger">*</span></label>
+                        <select
+                            class="input"
+                            wire:model="realizationStatus"
+                            @disabled($realizationWindowBefore || empty($items) || ! $selectedItemId)
+                        >
+                            <option value="done">Selesai</option>
+                            <option value="partial">Sebagian</option>
+                            <option value="not_done">Tidak Dikerjakan</option>
+                            <option value="blocked">Blocked</option>
+                        </select>
+                        @error('realizationStatus') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- Deskripsi Realisasi --}}
+                    <div>
+                        <label class="label">Deskripsi Realisasi</label>
+                        <textarea
+                            class="input min-h-[120px]"
+                            placeholder="Contoh: Review selesai 80%, ada kendala data dari tim finance..."
+                            wire:model.defer="realizationText"
+                            @disabled($realizationWindowBefore || empty($items) || ! $selectedItemId)
+                        ></textarea>
+                        @error('realizationText') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- Alasan jika tidak selesai --}}
+                    <div>
+                        <label class="label">Alasan jika belum selesai / blocked</label>
+                        <textarea
+                            class="input min-h-[80px]"
+                            placeholder="Contoh: Ada meeting mendadak dengan Director, pekerjaan tertunda ke besok."
+                            wire:model.defer="realizationReason"
+                            @disabled($realizationWindowBefore || empty($items) || ! $selectedItemId)
+                        ></textarea>
+                        @error('realizationReason') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- Lampiran --}}
+                    <div>
+                        <label class="label">Lampiran (opsional, maks 50MB)</label>
+                        <input
+                            type="file"
+                            class="input"
+                            multiple
+                            wire:model="realizationAttachments"
+                            @disabled($realizationWindowBefore || empty($items) || ! $selectedItemId)
+                        />
+                        <p wire:loading wire:target="realizationAttachments" class="text-xs text-muted mt-1">
+                            Mengunggah lampiran...
+                        </p>
+                        <p class="text-[11px] text-muted mt-1">
+                            Bisa upload lebih dari 1 file. Maks 50MB per file (bukan gabungan).
+                        </p>
+                        @error('realizationAttachments') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        @error('realizationAttachments.*') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+
+                        @if($currentAttachmentPath)
+                            <p class="text-[11px] text-muted mt-1">
+                                Sudah ada lampiran tersimpan untuk rencana ini.
+                            </p>
+                        @endif
+
+                        @if(! empty($existingAttachments))
+                            <div class="mt-2 space-y-1">
+                                @foreach($existingAttachments as $att)
+                                    <p class="text-[11px] text-muted truncate">- {{ $att['name'] }}</p>
+                                @endforeach
                             </div>
                         @endif
-                    </x-ui.card>
-                @empty
-                    <x-ui.empty-state
-                        title="Belum ada plan hari ini"
-                        description="Tambah plan pertama untuk memulai hari kerja."
-                        icon="clipboard"
-                        cta-label="Tambah Plan"
-                    />
-                @endforelse
-            </div>
+                    </div>
 
-            {{-- Add Plan Button --}}
-            @if($isPlanWindowOpen && !false)
-                <button
-                    @click="showAddForm = !showAddForm"
-                    class="btn-secondary w-full md:w-auto gap-2 mb-6"
-                    :class="showAddForm ? 'bg-app-bg' : ''"
-                >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                    <span x-text="showAddForm ? 'Tutup Form' : 'Tambah Plan'">Tambah Plan</span>
-                </button>
-            @endif
+                    @if($storedRealizationStatus)
+                        <p class="text-xs text-muted">
+                            Status realisasi hari ini:
+                            <span class="font-semibold text-text">{{ ucfirst($storedRealizationStatus) }}</span>
+                        </p>
+                    @endif
 
-            {{-- Add Plan Form --}}
-            <div x-show="showAddForm" x-transition style="display:none;">
-                <x-ui.card class="border-primary/30 border-2">
-                    <h4 class="text-sm font-semibold text-text mb-4" style="font-family: 'DM Sans', sans-serif;">Plan Baru</h4>
-                    {{-- TODO: wire:submit.prevent="addPlan" --}}
-                    <form class="space-y-4">
-                        {{-- Big Rock select --}}
-                        <div>
-                            <label class="label">Big Rock <span class="text-danger">*</span></label>
-                            {{-- TODO: wire:model.live="selectedBigRock" --}}
-                            <select class="input" x-model="selectedBigRock">
-                                <option value="">Pilih Big Rock...</option>
-                                @foreach($bigRocks as $br)
-                                    <option value="{{ $br['id'] }}">{{ $br['title'] }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div class="flex gap-3 pt-2">
+                        <button
+                            type="button"
+                            class="btn-primary flex-1 flex items-center justify-center gap-2"
+                            wire:click="saveRealization"
+                            wire:target="saveRealization,realizationAttachments"
+                            wire:loading.attr="disabled"
+                            @disabled($realizationWindowBefore || empty($items) || ! $selectedItemId)
+                        >
+                            <span wire:loading.remove wire:target="saveRealization">
+                                Simpan Realisasi
+                                @if($realizationWindowAfter)
+                                    <span class="text-xs font-normal text-warning ml-1">(Akan dianggap Late)</span>
+                                @endif
+                            </span>
+                            <span wire:loading wire:target="saveRealization" class="flex items-center gap-2">
+                                <span class="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
+                                <span>Menyimpan...</span>
+                            </span>
+                        </button>
+                    </div>
 
-                        {{-- Roadmap select (dependent on big rock) --}}
-                        <div>
-                            <label class="label">Roadmap <span class="text-danger">*</span></label>
-                            {{-- TODO: wire:model="selectedRoadmap" —  dynamic berdasar big rock --}}
-                            <select class="input">
-                                <option value="">Pilih Roadmap...</option>
-                                {{-- Dummy: show all roadmaps --}}
-                                @foreach($roadmapsByBigRock as $brId => $roadmaps)
-                                    @foreach($roadmaps as $rm)
-                                        <option value="{{ $rm['id'] }}" x-show="selectedBigRock == '{{ $brId }}'">{{ $rm['title'] }}</option>
-                                    @endforeach
-                                @endforeach
-                            </select>
-                        </div>
-
-                        {{-- Hierarchy visual preview --}}
-                        <div class="bg-app-bg rounded-lg p-3">
-                            <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Hierarki</p>
-                            <div class="flex items-center gap-1.5 text-xs">
-                                <span class="badge-primary" x-text="selectedBigRock ? document.querySelector('[x-model=selectedBigRock] option:checked')?.textContent || 'Big Rock' : '—'">—</span>
-                                <svg class="w-3 h-3 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                                <span class="badge-muted">Roadmap</span>
-                                <svg class="w-3 h-3 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                                <span class="text-text font-medium">Plan ini</span>
-                            </div>
-                        </div>
-
-                        {{-- Judul --}}
-                        <div>
-                            <label class="label">Judul Plan <span class="text-danger">*</span></label>
-                            {{-- TODO: wire:model.defer="planTitle" --}}
-                            <input type="text" class="input" placeholder="Apa yang akan dikerjakan hari ini?" />
-                        </div>
-
-                        {{-- Deskripsi --}}
-                        <div>
-                            <label class="label">Deskripsi</label>
-                            {{-- TODO: wire:model.defer="planDescription" --}}
-                            <textarea class="input min-h-[80px]" rows="3" placeholder="Detail rencana kerja..."></textarea>
-                        </div>
-
-                        {{-- Alasan --}}
-                        <div>
-                            <label class="label">Alasan/Catatan</label>
-                            {{-- TODO: wire:model.defer="planReason" --}}
-                            <textarea class="input min-h-[60px]" rows="2" placeholder="Alasan atau catatan tambahan..."></textarea>
-                        </div>
-
-                        {{-- Jam rencana --}}
-                        <div>
-                            <label class="label">Jam Rencana <span class="text-danger">*</span></label>
-                            {{-- TODO: wire:model.defer="plannedHours" --}}
-                            <input type="number" class="input w-32" min="0.5" max="8" step="0.5" placeholder="2" />
-                            <p class="text-xs text-muted mt-1">Estimasi waktu dalam jam (0.5 – 8)</p>
-                        </div>
-
-                        {{-- Form actions --}}
-                        <div class="flex gap-3">
-                            <button type="button" @click="showAddForm = false" class="btn-secondary flex-1">Batal</button>
-                            <button type="submit" class="btn-primary flex-1">Tambah Plan</button>
-                        </div>
-                    </form>
-                </x-ui.card>
-            </div>
-
-            {{-- Submit Semua Plan (sticky bottom mobile) --}}
-            @if(count($existingPlans) > 0 && $isPlanWindowOpen)
-                <div class="fixed bottom-0 left-0 right-0 p-4 bg-surface border-t border-border md:static md:p-0 md:border-0 md:mt-6 md:bg-transparent z-30">
-                    {{-- TODO: wire:click="submitAllPlans" --}}
-                    <button class="btn-primary w-full md:w-auto">
-                        Submit Semua Plan ({{ count($existingPlans) }} item)
-                    </button>
                 </div>
-                {{-- Spacer for mobile fixed button --}}
-                <div class="h-20 md:hidden"></div>
-            @endif
-        </div>
-
-        {{-- ==================== TAB: REALISASI ==================== --}}
-        <div x-show="tab === 'realisasi'" x-data="{ expandedId: null }" style="display:none;">
-            @if(!$isRealizationWindowOpen)
-                <div class="bg-warning-bg border border-warning/20 rounded-xl p-4 mb-4 flex items-center gap-2 text-sm text-warning">
-                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    Window realisasi belum terbuka ({{ $realizationWindowOpen }} – {{ $realizationWindowClose }})
-                </div>
-            @endif
-
-            <div class="space-y-3">
-                @forelse($existingPlans as $plan)
-                    <x-ui.card class="overflow-hidden">
-                        {{-- Plan summary header --}}
-                        <div class="flex items-start justify-between cursor-pointer" @click="expandedId = expandedId === {{ $plan['id'] }} ? null : {{ $plan['id'] }}">
-                            <div class="flex-1">
-                                <p class="font-semibold text-text text-sm">{{ $plan['title'] }}</p>
-                                <div class="flex flex-wrap items-center gap-1.5 text-xs mt-1">
-                                    <span class="badge-primary">{{ $plan['big_rock'] }}</span>
-                                    <svg class="w-3 h-3 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                                    <span class="badge-muted">{{ $plan['roadmap'] }}</span>
-                                </div>
-                            </div>
-                            <svg class="w-5 h-5 text-muted shrink-0 transition-transform" :class="expandedId === {{ $plan['id'] }} ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </div>
-
-                        {{-- Realization form (expandable) --}}
-                        <div x-show="expandedId === {{ $plan['id'] }}" x-transition style="display:none;" class="mt-4 pt-4 border-t border-border">
-                            <form class="space-y-4">
-                                {{-- Status radio --}}
-                                <div>
-                                    <label class="label">Status Realisasi <span class="text-danger">*</span></label>
-                                    <div class="space-y-2" x-data="{ status: '' }">
-                                        <label class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-border hover:bg-app-bg cursor-pointer min-h-[44px]"
-                                            :class="status === 'finished' ? 'border-success bg-success-bg' : ''"
-                                        >
-                                            <input type="radio" name="status_{{ $plan['id'] }}" value="finished" x-model="status" class="accent-success">
-                                            <span class="text-sm text-text">Selesai</span>
-                                        </label>
-                                        <label class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-border hover:bg-app-bg cursor-pointer min-h-[44px]"
-                                            :class="status === 'in_progress' ? 'border-warning bg-warning-bg' : ''"
-                                        >
-                                            <input type="radio" name="status_{{ $plan['id'] }}" value="in_progress" x-model="status" class="accent-warning">
-                                            <span class="text-sm text-text">Sedang Berjalan</span>
-                                        </label>
-                                        <label class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-border hover:bg-app-bg cursor-pointer min-h-[44px]"
-                                            :class="status === 'not_finished' ? 'border-danger bg-danger-bg' : ''"
-                                        >
-                                            <input type="radio" name="status_{{ $plan['id'] }}" value="not_finished" x-model="status" class="accent-danger">
-                                            <span class="text-sm text-text">Tidak Selesai</span>
-                                        </label>
-
-                                        {{-- Alasan wajib jika bukan Selesai --}}
-                                        <div x-show="status && status !== 'finished'" x-transition>
-                                            <label class="label mt-3">Alasan <span class="text-danger">*</span></label>
-                                            {{-- TODO: wire:model="realizationReason" --}}
-                                            <textarea class="input min-h-[80px]" rows="2" placeholder="Jelaskan alasan..."></textarea>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Catatan realisasi --}}
-                                <div>
-                                    <label class="label">Catatan Realisasi</label>
-                                    {{-- TODO: wire:model.defer="realizationNotes" --}}
-                                    <textarea class="input min-h-[60px]" rows="2" placeholder="Catatan tambahan..."></textarea>
-                                </div>
-
-                                {{-- Action --}}
-                                {{-- TODO: wire:click="submitRealization({{ $plan['id'] }})" --}}
-                                <button type="button" class="btn-primary w-full md:w-auto">
-                                    Simpan Realisasi
-                                </button>
-                            </form>
-                        </div>
-                    </x-ui.card>
-                @empty
-                    <x-ui.empty-state
-                        title="Tidak ada plan untuk direalisasikan"
-                        description="Isi plan terlebih dahulu di tab Plan."
-                        icon="clipboard"
-                    />
-                @endforelse
-            </div>
-
-            {{-- Submit All Realization (sticky mobile) --}}
-            @if(count($existingPlans) > 0 && $isRealizationWindowOpen)
-                <div class="fixed bottom-0 left-0 right-0 p-4 bg-surface border-t border-border md:static md:p-0 md:border-0 md:mt-6 md:bg-transparent z-30">
-                    {{-- TODO: wire:click="submitAllRealizations" --}}
-                    <button class="btn-primary w-full md:w-auto">
-                        Submit Semua Realisasi
-                    </button>
-                </div>
-                <div class="h-20 md:hidden"></div>
-            @endif
+                @endif
+            </x-ui.card>
         </div>
     </div>
-</x-layouts.app>
+</div>

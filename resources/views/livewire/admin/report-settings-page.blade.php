@@ -1,23 +1,12 @@
 {{--
-    Admin Report Settings Page
-    Route: /admin/report-settings
-    Component: App\Livewire\Admin\ReportSettingsPage
+    Admin Report Settings Page (content only, layout via components.layouts.app)
 --}}
 
-<x-layouts.app title="Pengaturan Window Laporan">
-    @php
-        // Dummy current settings
-        $currentSettings = [
-            'plan_open' => '08:00',
-            'plan_close' => '17:00',
-            'realization_open' => '15:00',
-            'realization_close' => '23:59',
-        ];
-        $hasWarning = false;
-        $warningMessage = 'Perhatian: Jam tutup lebih awal dari jam buka. Periksa kembali.';
-    @endphp
-
-    <x-ui.page-header title="Pengaturan Window Laporan" description="Atur jam buka dan tutup untuk input plan dan realisasi harian" />
+<div>
+    <x-ui.page-header
+        title="Pengaturan Window Laporan"
+        description="Atur jam buka dan tutup untuk input plan dan realisasi harian"
+    />
 
     <div class="max-w-xl">
         {{-- Current settings info box --}}
@@ -38,24 +27,31 @@
             </div>
         </div>
 
-        {{-- TODO: wire:submit.prevent="save" --}}
-        <form class="space-y-6">
+        {{-- Warning box --}}
+        @if($hasWarning)
+            <div class="bg-warning-bg border border-warning/20 rounded-xl p-4 flex items-start gap-3 mb-6">
+                <svg class="w-5 h-5 text-warning shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+                <p class="text-sm text-warning">{{ $warningMessage }}</p>
+            </div>
+        @endif
+
+        <form class="space-y-6" wire:submit.prevent="save">
             {{-- Plan Section --}}
             <div>
                 <h3 class="text-base font-semibold text-text mb-3" style="font-family: 'DM Sans', sans-serif;">Plan</h3>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="label">Jam Buka Plan</label>
-                        {{-- TODO: wire:model="planOpenTime" --}}
-                        <input type="time" class="input" value="{{ $currentSettings['plan_open'] }}" />
+                        <input type="time" class="input" wire:model="planOpenTime" />
+                        @error('planOpenTime') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="label">Jam Tutup Plan</label>
-                        {{-- TODO: wire:model="planCloseTime" --}}
-                        <input type="time" class="input" value="{{ $currentSettings['plan_close'] }}" />
+                        <input type="time" class="input" wire:model="planCloseTime" />
+                        @error('planCloseTime') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
-                <p class="text-xs text-muted mt-2">Plan hanya dapat diisi dalam rentang waktu ini setiap hari kerja</p>
+                <p class="text-xs text-muted mt-2">Plan hanya dapat diisi dalam rentang waktu ini setiap hari kerja.</p>
             </div>
 
             {{-- Realization Section --}}
@@ -64,31 +60,31 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="label">Jam Buka Realisasi</label>
-                        {{-- TODO: wire:model="realizationOpenTime" --}}
-                        <input type="time" class="input" value="{{ $currentSettings['realization_open'] }}" />
+                        <input type="time" class="input" wire:model="realizationOpenTime" />
+                        @error('realizationOpenTime') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="label">Jam Tutup Realisasi</label>
-                        {{-- TODO: wire:model="realizationCloseTime" --}}
-                        <input type="time" class="input" value="{{ $currentSettings['realization_close'] }}" />
+                        <input type="time" class="input" wire:model="realizationCloseTime" />
+                        @error('realizationCloseTime') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
-                <p class="text-xs text-muted mt-2">Realisasi diisi setelah jam kerja selesai</p>
+                <p class="text-xs text-muted mt-2">Realisasi diisi setelah jam kerja selesai.</p>
             </div>
 
-            {{-- Warning box --}}
-            @if($hasWarning)
-                <div class="bg-warning-bg border border-warning/20 rounded-xl p-4 flex items-start gap-3">
-                    <svg class="w-5 h-5 text-warning shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
-                    <p class="text-sm text-warning">{{ $warningMessage }}</p>
-                </div>
-            @endif
-
             {{-- Submit --}}
-            {{-- TODO: wire:loading state --}}
-            <button type="submit" class="btn-primary w-full md:w-auto">
-                Simpan Pengaturan
+            <button
+                type="submit"
+                class="btn-primary w-full md:w-auto flex items-center justify-center gap-2"
+                wire:loading.attr="disabled"
+                wire:target="save"
+            >
+                <span wire:loading.remove wire:target="save">Simpan Pengaturan</span>
+                <span wire:loading wire:target="save" class="flex items-center gap-2">
+                    <span class="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
+                    <span>Menyimpan...</span>
+                </span>
             </button>
         </form>
     </div>
-</x-layouts.app>
+</div>

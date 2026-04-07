@@ -6,11 +6,7 @@
 
 <x-layouts.app title="Assignment HoD">
     @php
-        $assignments = [
-            ['id' => 1, 'name' => 'Siti Rahayu', 'email' => 'siti@perusahaan.com', 'divisions' => ['Keuangan', 'Operasional']],
-            ['id' => 2, 'name' => 'Hendro Wijaya', 'email' => 'hendro@perusahaan.com', 'divisions' => ['IT', 'Marketing', 'R&D']],
-            ['id' => 3, 'name' => 'Linda Permata', 'email' => 'linda@perusahaan.com', 'divisions' => ['HR']],
-        ];
+        $assignments = \App\Models\HodAssignment::with(['hod', 'division'])->get();
     @endphp
 
     <x-ui.page-header title="Assignment HoD" description="Tentukan HoD yang bertanggung jawab atas setiap divisi">
@@ -38,23 +34,20 @@
                 <tbody class="divide-y divide-border">
                     @foreach($assignments as $assign)
                         <tr class="hover:bg-app-bg transition-colors">
-                            <td class="px-4 py-3.5 font-medium text-text">{{ $assign['name'] }}</td>
-                            <td class="px-4 py-3.5 text-muted">{{ $assign['email'] }}</td>
+                            <td class="px-4 py-3.5 font-medium text-text">{{ $assign->hod?->name }}</td>
+                            <td class="px-4 py-3.5 text-muted">{{ $assign->hod?->email }}</td>
                             <td class="px-4 py-3.5">
                                 <div class="flex flex-wrap gap-1.5">
-                                    @foreach(array_slice($assign['divisions'], 0, 3) as $div)
-                                        <span class="badge-primary">{{ $div }}</span>
-                                    @endforeach
-                                    @if(count($assign['divisions']) > 3)
-                                        <span class="badge-muted">+{{ count($assign['divisions']) - 3 }} lagi</span>
+                                    @if($assign->division)
+                                        <span class="badge-primary">{{ $assign->division->name }}</span>
                                     @endif
                                 </div>
                             </td>
                             <td class="px-4 py-3.5 text-right">
                                 <div class="flex items-center justify-end gap-2">
-                                    {{-- TODO: wire:click="openEdit({{ $assign['id'] }})" --}}
+                                    {{-- TODO: wire:click="openEdit({{ $assign->id }})" --}}
                                     <button class="text-sm text-primary font-medium hover:underline">Edit</button>
-                                    {{-- TODO: wire:click="delete({{ $assign['id'] }})" + confirmation --}}
+                                    {{-- TODO: wire:click="delete({{ $assign->id }})" + confirmation --}}
                                     <button class="text-sm text-danger font-medium hover:underline">Hapus</button>
                                 </div>
                             </td>
@@ -69,14 +62,11 @@
     <div class="block md:hidden space-y-3">
         @forelse($assignments as $assign)
             <x-ui.card>
-                <p class="font-semibold text-text">{{ $assign['name'] }}</p>
-                <p class="text-sm text-muted mt-0.5">{{ $assign['email'] }}</p>
+                <p class="font-semibold text-text">{{ $assign->hod?->name }}</p>
+                <p class="text-sm text-muted mt-0.5">{{ $assign->hod?->email }}</p>
                 <div class="mt-3 flex flex-wrap gap-1.5">
-                    @foreach(array_slice($assign['divisions'], 0, 3) as $div)
-                        <span class="badge-primary">{{ $div }}</span>
-                    @endforeach
-                    @if(count($assign['divisions']) > 3)
-                        <span class="badge-muted">+{{ count($assign['divisions']) - 3 }} lagi</span>
+                    @if($assign->division)
+                        <span class="badge-primary">{{ $assign->division->name }}</span>
                     @endif
                 </div>
                 <div class="mt-3 pt-3 border-t border-border flex gap-2">

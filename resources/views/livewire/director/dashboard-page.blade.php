@@ -6,27 +6,93 @@
 
 <x-layouts.app title="Dashboard">
     @php
-        // Dummy data
-        $selectedDate = '2025-07-07';
-        $healthScore = 58;
+        $selectedDate = \Illuminate\Support\Carbon::today()->toDateString();
+
+        $latestCompanyScoreDate = \App\Models\HealthScore::query()
+            ->where('scope_type', 'company')
+            ->max('score_date');
+
+        $scoreDate = $latestCompanyScoreDate ? \Illuminate\Support\Carbon::parse($latestCompanyScoreDate) : \Illuminate\Support\Carbon::yesterday();
+
+        $healthScore = (int) (\App\Models\HealthScore::query()
+            ->where('scope_type', 'company')
+            ->whereDate('score_date', $scoreDate->toDateString())
+            ->value('score') ?? 0);
+
         $healthLabel = $healthScore >= 70 ? 'Baik' : ($healthScore >= 40 ? 'Perlu Perhatian' : 'Kritis');
         $healthColor = $healthScore >= 70 ? 'success' : ($healthScore >= 40 ? 'warning' : 'danger');
+
+        $periodFrom = $scoreDate->copy()->subDays(7);
+        $periodTo = $scoreDate->copy();
+
+        $todayFindings = \App\Models\Finding::query()
+            ->whereDate('finding_date', $scoreDate->toDateString())
+            ->whereIn('severity', ['medium', 'high']);
+
+        $divisionsWithExceptions = (clone $todayFindings)
+            ->whereNotNull('division_id')
+            ->distinct('division_id')
+            ->count('division_id');
+
+        $majorFindingsToday = (clone $todayFindings)->where('severity', 'high')->count();
+
         $summaryCards = [
             'company_health_score' => $healthScore,
-            'divisions_with_exceptions' => 3,
-            'major_findings_today' => 5,
-            'unresolved_recurring' => 2,
+            'divisions_with_exceptions' => $divisionsWithExceptions,
+            'major_findings_today' => $majorFindingsToday,
+            'unresolved_recurring' => 0,
         ];
-        $attentionDivisions = [
-            ['name' => 'Operasional', 'findings' => 8, 'health' => 42],
-            ['name' => 'Keuangan', 'findings' => 5, 'health' => 55],
-            ['name' => 'IT', 'findings' => 3, 'health' => 68],
-        ];
-        $recentMajorFindings = [
-            ['title' => 'Missing plan submission 3 hari berturut-turut', 'user' => 'Budi Santoso', 'division' => 'Operasional', 'severity' => 'major', 'time' => '2 jam lalu'],
-            ['title' => 'Realisasi blocked tanpa alasan jelas', 'user' => 'Ahmad Fauzi', 'division' => 'IT', 'severity' => 'major', 'time' => '4 jam lalu'],
-            ['title' => 'Late submission 5 kali dalam minggu ini', 'user' => 'Rudi Hermawan', 'division' => 'Operasional', 'severity' => 'medium', 'time' => '6 jam lalu'],
-        ];
+
+        $divisionRows = \App\Models\Finding::query()
+            ->whereBetween('finding_date', [$periodFrom->toDateString(), $periodTo->toDateString()])
+            ->whereIn('severity', ['medium', 'high'])
+            ->whereNotNull('division_id')
+            ->selectRaw('division_id, count(*) as total')
+            ->groupBy('division_id')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get();
+
+        $divisionNameById = \App\Models\Division::query()
+            ->whereIn('id', $divisionRows->pluck('division_id')->all())
+            ->pluck('name', 'id')
+            ->all();
+
+        $divisionScoreById = \App\Models\HealthScore::query()
+            ->where('scope_type', 'division')
+            ->whereDate('score_date', $scoreDate->toDateString())
+            ->whereIn('scope_id', $divisionRows->pluck('division_id')->all())
+            ->pluck('score', 'scope_id')
+            ->all();
+
+        $attentionDivisions = $divisionRows->map(function ($row) use ($divisionNameById, $divisionScoreById) {
+            return [
+                'name' => $divisionNameById[$row->division_id] ?? '—',
+                'findings' => (int) $row->total,
+                'health' => (int) ($divisionScoreById[$row->division_id] ?? 0),
+            ];
+        })->all();
+
+        $recentMajorFindings = \App\Models\Finding::query()
+            ->with(['user:id,name', 'division:id,name'])
+            ->whereBetween('finding_date', [$periodFrom->toDateString(), $periodTo->toDateString()])
+            ->whereIn('severity', ['medium', 'high'])
+            ->orderByDesc('finding_date')
+            ->orderByDesc('id')
+            ->limit(6)
+            ->get()
+            ->map(function ($f) {
+                $severity = $f->severity === 'high' ? 'major' : ($f->severity === 'medium' ? 'medium' : 'minor');
+
+                return [
+                    'title' => $f->title,
+                    'user' => $f->user?->name ?? '—',
+                    'division' => $f->division?->name ?? '—',
+                    'severity' => $severity,
+                    'time' => \Illuminate\Support\Carbon::parse($f->finding_date)->translatedFormat('j M'),
+                ];
+            })
+            ->all();
     @endphp
 
     {{-- Page Header --}}

@@ -24,6 +24,8 @@ $map = [
     'done'        => ['label' => 'Done',              'class' => 'badge-success'],
     'sent'        => ['label' => 'Terkirim',          'class' => 'badge-success'],
     'failed'      => ['label' => 'Gagal',             'class' => 'badge-danger'],
+    'on_track'    => ['label' => 'On Track',          'class' => 'badge-success'],
+    'at_risk'     => ['label' => 'At Risk',           'class' => 'badge-warning'],
 ];
 
 $config = $map[$status] ?? ['label' => ucfirst($status), 'class' => 'badge-muted'];
