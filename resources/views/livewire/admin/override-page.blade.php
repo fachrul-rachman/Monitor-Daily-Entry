@@ -79,7 +79,7 @@
                         <x-ui.status-badge :status="$entry['status']" />
                     </div>
                     <p class="text-sm text-text mt-2">{{ $entry['title'] }}</p>
-                    <div class="mt-2 flex items-center gap-2">
+                    <div class="mt-2 flex flex-wrap items-center gap-2">
                         <span class="badge-primary">{{ $entry['type'] }}</span>
                         <span class="badge-muted">{{ $entry['big_rock'] }}</span>
                     </div>

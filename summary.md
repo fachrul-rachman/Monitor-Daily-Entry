@@ -368,6 +368,11 @@ Beberapa saran yang realistis dan tetap sejalan dengan desain yang sudah ada:
    - Bagi pengguna yang memakai HP, terlalu banyak section panjang akan membuat mereka merasa tersesat.
    - Beri judul section yang jelas dan konsisten, sehingga ketika scroll terasa seperti membaca bab demi bab, bukan satu halaman tak berujung.
 
+Sebagian perbaikan ini sudah mulai diterapkan di UI:
+- Sidebar sekarang benar‑benar **fixed di desktop**, sehingga konten utama muncul sejajar di kanan tanpa perlu scroll panjang dulu.
+- Baris chip/badge yang berpotensi penuh di mobile (misalnya severity breakdown dan beberapa kartu override) sudah diatur agar **bisa membungkus ke baris berikutnya** (wrap), sehingga tidak lagi “keluar” dari kartu.
+- Di sidebar Director, kini ada blok **“Kelola”** khusus yang memberi akses langsung ke pengelolaan Users, Divisi, Assignment HoD, dan Cuti & Izin, sehingga peran Director sebagai pengambil keputusan juga terasa di level administrasi ringan tanpa harus berpindah role.
+
 Secara keseluruhan, UI/UX saat ini **sudah di jalur yang benar**, hanya perlu disesuaikan agar lebih “ramah mata” dan “ramah beban otak” bagi pengguna yang mungkin tidak lagi muda dan sering memakai HP.
 
 ---

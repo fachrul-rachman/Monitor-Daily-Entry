@@ -46,7 +46,7 @@
         <x-ui.summary-card label="Total Exception" :value="$summaryMetrics['total_exceptions']" context="Periode ini" border="danger" />
         <x-ui.card>
             <p class="text-sm text-muted font-medium">Severity Breakdown</p>
-            <div class="flex items-center gap-3 mt-2">
+            <div class="flex flex-wrap items-center gap-2 mt-2">
                 <span class="badge-danger">{{ $summaryMetrics['major'] }} Major</span>
                 <span class="badge-warning">{{ $summaryMetrics['medium'] }} Medium</span>
                 <span class="badge-info">{{ $summaryMetrics['minor'] }} Minor</span>
