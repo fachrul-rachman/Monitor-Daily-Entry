@@ -1,0 +1,131 @@
+@import 'tailwindcss';
+
+@source '../views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+/* ============================================
+   DAYTA — Design System Tokens (Tailwind v4)
+   ============================================ */
+
+@theme {
+  /* --- Fonts --- */
+  --font-heading: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* --- Neutral --- */
+  --color-app-bg: #F8F9FA;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E6EA;
+  --color-muted: #6C757D;
+  --color-text: #1A1D23;
+
+  /* --- Primary (Navy Blue) --- */
+  --color-primary: #1E3A5F;
+  --color-primary-hover: #16304F;
+  --color-primary-light: #EBF0F8;
+
+  /* --- Status --- */
+  --color-success: #1A7F4B;
+  --color-success-bg: #EDFAF3;
+  --color-warning: #B45309;
+  --color-warning-bg: #FEF3C7;
+  --color-danger: #B91C1C;
+  --color-danger-bg: #FEE2E2;
+  --color-info: #1D4ED8;
+  --color-info-bg: #EFF6FF;
+
+  /* --- Sidebar --- */
+  --color-sidebar-bg: #1A1D23;
+  --color-sidebar-text: #CBD5E1;
+  --color-sidebar-active-bg: #1E3A5F;
+  --color-sidebar-active-text: #FFFFFF;
+  --color-sidebar-section: #475569;
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border);
+  }
+
+  body {
+    font-family: var(--font-body);
+    color: var(--color-text);
+    background-color: var(--color-app-bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+}
+
+/* ============================================
+   Utility Component Classes
+   ============================================ */
+
+@layer components {
+  /* --- Buttons --- */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors min-h-[44px] cursor-pointer;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 bg-white border border-border text-text text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-app-bg transition-colors min-h-[44px] cursor-pointer;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 bg-danger text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:opacity-90 transition-opacity min-h-[44px] cursor-pointer;
+  }
+
+  .btn-disabled {
+    @apply opacity-50 cursor-not-allowed pointer-events-none;
+  }
+
+  /* --- Form --- */
+  .input {
+    @apply w-full px-3 py-2.5 border border-border rounded-lg text-sm text-text bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition min-h-[44px];
+  }
+
+  .input-error {
+    @apply border-danger focus:ring-danger/30 focus:border-danger;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-text mb-1.5;
+  }
+
+  /* --- Badge variants --- */
+  .badge-success {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success-bg text-success;
+  }
+
+  .badge-danger {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-danger-bg text-danger;
+  }
+
+  .badge-warning {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-warning-bg text-warning;
+  }
+
+  .badge-info {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-info-bg text-info;
+  }
+
+  .badge-primary {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-light text-primary;
+  }
+
+  .badge-muted {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-app-bg text-muted;
+  }
+}
