@@ -107,19 +107,19 @@
                 <p class="px-4 py-2 mt-4 text-xs uppercase tracking-widest text-sidebar-section">Kelola</p>
 
                 {{-- Director punya akses administrasi terbatas seperti Admin --}}
-                <a href="{{ route('admin.users') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ in_array($currentRoute, ['admin.users']) ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
+                <a href="{{ route('director.manage.users') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'director.manage.users' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
                     Users
                 </a>
-                <a href="{{ route('admin.divisions') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ in_array($currentRoute, ['admin.divisions']) ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
+                <a href="{{ route('director.manage.divisions') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'director.manage.divisions' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                     Divisi
                 </a>
-                <a href="{{ route('admin.assignments') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ in_array($currentRoute, ['admin.assignments']) ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
+                <a href="{{ route('director.manage.assignments') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'director.manage.assignments' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                     Assignment HoD
                 </a>
-                <a href="{{ route('admin.leave') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ in_array($currentRoute, ['admin.leave']) ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
+                <a href="{{ route('director.manage.leave') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'director.manage.leave' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                     Cuti & Izin
                 </a>
@@ -154,16 +154,24 @@
 
                 <p class="px-4 py-2 mt-4 text-xs uppercase tracking-widest text-sidebar-section">Divisi</p>
 
-                <a href="{{ route('hod.division-entries') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'hod.division-entries' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                    Entry Divisi
-                </a>
-                <a href="{{ route('hod.division-summary') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'hod.division-summary' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                    Ringkasan Divisi
-                </a>
+	                <a href="{{ route('hod.division-entries') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'hod.division-entries' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
+	                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+	                    Entry Divisi
+	                </a>
+	                <a href="{{ route('hod.team-big-rock') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'hod.team-big-rock' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
+	                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.5c-1.657 0-3-1.12-3-2.5S10.343 1.5 12 1.5s3 1.12 3 2.5-1.343 2.5-3 2.5zM4.5 20.5v-1.2c0-2.4 3.2-4.3 7.5-4.3s7.5 1.9 7.5 4.3v1.2H4.5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7.5 12.5c-.9-.5-1.5-1.2-1.5-2 0-1.5 2.7-2.8 6-2.8s6 1.3 6 2.8c0 .8-.6 1.5-1.5 2"/></svg>
+	                    Big Rock Tim
+	                </a>
+	                <a href="{{ route('hod.division-summary') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'hod.division-summary' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
+	                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+	                    Ringkasan Divisi
+	                </a>
+	                <a href="{{ route('hod.leave') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'hod.leave' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
+	                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+	                    Cuti & Izin
+	                </a>
 
-                <p class="px-4 py-2 mt-4 text-xs uppercase tracking-widest text-sidebar-section">Tools</p>
+	                <p class="px-4 py-2 mt-4 text-xs uppercase tracking-widest text-sidebar-section">Tools</p>
 
                 <a href="{{ route('hod.ai-chat') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'hod.ai-chat' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/></svg>
@@ -201,6 +209,32 @@
                 $roleInitials = ['admin' => 'AD', 'director' => 'DU', 'hod' => 'BH', 'manager' => 'RS'];
                 $roleDivisions = ['admin' => 'Sistem', 'director' => 'Perusahaan', 'hod' => 'Divisi Operasional', 'manager' => 'Divisi Operasional'];
             @endphp
+            @if(auth()->check())
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-xs text-white font-bold shrink-0">
+                        {{ auth()->user()->initials() }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-white truncate">{{ auth()->user()->name }}</p>
+                        <p class="text-xs text-sidebar-text truncate">
+                            {{ $roleLabels[auth()->user()->role] ?? 'User' }}{{ auth()->user()->division?->name ? ' · '.auth()->user()->division->name : '' }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-3 flex items-center justify-between gap-2">
+                    <a href="{{ route(auth()->user()->role.'.security') }}" class="text-xs text-sidebar-section hover:text-white transition-colors">
+                        Ganti Password
+                    </a>
+
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="text-xs text-sidebar-section hover:text-white transition-colors cursor-pointer">
+                            Logout
+                        </button>
+                    </form>
+                </div>
+            @else
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-xs text-white font-bold shrink-0">
                     {{ $roleInitials[$currentRole] ?? 'U' }}
@@ -214,6 +248,7 @@
                 <a href="{{ url('/') }}" class="text-xs text-sidebar-section hover:text-white transition-colors">← Ganti Role</a>
                 <span class="text-xs text-sidebar-section">Preview Mode</span>
             </div>
+            @endif
         </div>
     </aside>
 

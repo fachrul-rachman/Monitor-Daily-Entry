@@ -76,7 +76,7 @@
                                     <p class="text-[11px] text-muted truncate">
                                         {{ $item['big_rock'] ?? 'Tanpa Big Rock' }}
                                         @if($item['roadmap'])
-                                            · {{ $item['roadmap'] }}
+                                            &middot; {{ $item['roadmap'] }}
                                         @endif
                                     </p>
                                 </div>

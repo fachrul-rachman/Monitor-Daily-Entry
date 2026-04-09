@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\DailyEntry;
 use App\Models\Finding;
 use App\Models\HealthScore;
+use App\Models\ReportSetting;
 use App\Models\RoadmapItem;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -21,6 +22,9 @@ class MetricsService
         $from = $from->copy()->startOfDay();
         $to = $to->copy()->endOfDay();
 
+        $setting = ReportSetting::current();
+        $now = Carbon::now();
+
         $users = User::query()
             ->whereIn('role', ['hod', 'manager'])
             ->where('status', 'active')
@@ -35,7 +39,7 @@ class MetricsService
             return;
         }
 
-        DB::transaction(function () use ($users, $workdays): void {
+        DB::transaction(function () use ($users, $workdays, $setting, $now): void {
             $dateStrings = array_map(fn (Carbon $d) => $d->toDateString(), $workdays);
 
             // Bersihkan data lama di rentang ini (idempotent).
@@ -57,15 +61,15 @@ class MetricsService
                 ->delete();
 
             HealthScore::query()
-                ->whereIn('score_date', [$dateStrings[array_key_last($dateStrings)]])
+                ->whereIn('score_date', $dateStrings)
                 ->whereIn('scope_type', ['company', 'division', 'user'])
                 ->delete();
 
             foreach ($users as $user) {
-                $this->computeFindingsForUser($user, $workdays);
+                $this->computeFindingsForUser($user, $workdays, $now, $setting);
             }
 
-            $this->computeScores($users, $workdays);
+            $this->computeScores($users, $workdays, $now, $setting);
         });
     }
 
@@ -83,14 +87,14 @@ class MetricsService
         return $days;
     }
 
-    private function computeFindingsForUser(User $user, array $workdays): void
+    private function computeFindingsForUser(User $user, array $workdays, Carbon $now, ReportSetting $setting): void
     {
         $dateStrings = array_map(fn (Carbon $d) => $d->toDateString(), $workdays);
 
         $entries = DailyEntry::query()
             ->where('user_id', $user->id)
             ->whereIn('entry_date', $dateStrings)
-            ->get(['id', 'entry_date', 'plan_status', 'realization_status'])
+            ->get(['id', 'entry_date', 'plan_status', 'realization_status', 'plan_submitted_at', 'realization_submitted_at'])
             ->keyBy(fn (DailyEntry $e) => $e->entry_date->toDateString());
 
         // Missing daily (per hari)
@@ -99,8 +103,19 @@ class MetricsService
             /** @var DailyEntry|null $entry */
             $entry = $entries->get($key);
 
-            $missingPlan = ! $entry || $entry->plan_status === 'missing';
-            $missingReal = ! $entry || $entry->realization_status === 'missing';
+            // Missing baru dihitung setelah melewati jam tutup (supaya angka "hari ini" tidak menakutkan).
+            $isToday = $key === $now->toDateString();
+            $planClose = Carbon::parse($key.' '.$setting->plan_close_time);
+            $realClose = Carbon::parse($key.' '.$setting->realization_close_time);
+
+            $shouldEvaluatePlan = ! $isToday || $now->gt($planClose);
+            $shouldEvaluateReal = ! $isToday || $now->gt($realClose);
+
+            $planSubmitted = (bool) ($entry && $entry->plan_submitted_at);
+            $realSubmitted = (bool) ($entry && $entry->realization_submitted_at);
+
+            $missingPlan = $shouldEvaluatePlan && ! $planSubmitted;
+            $missingReal = $shouldEvaluateReal && ! $realSubmitted;
 
             if (! $missingPlan && ! $missingReal) {
                 continue;
@@ -133,6 +148,12 @@ class MetricsService
         // Telat mingguan (threshold: >2 medium, >3 high)
         $byWeek = collect($workdays)->groupBy(fn (Carbon $d) => $d->copy()->startOfWeek(Carbon::MONDAY)->toDateString());
         foreach ($byWeek as $weekStart => $daysInWeek) {
+            $weekEndDate = Carbon::parse($weekStart)->endOfWeek(Carbon::SUNDAY);
+            if ($weekEndDate->gt($now)) {
+                // Minggu berjalan belum selesai, jangan bikin finding "mingguan" dulu.
+                continue;
+            }
+
             $lateDays = 0;
 
             foreach ($daysInWeek as $d) {
@@ -154,7 +175,7 @@ class MetricsService
             }
 
             $severity = $lateDays > 3 ? 'high' : 'medium';
-            $weekEnd = Carbon::parse($weekStart)->endOfWeek(Carbon::SUNDAY)->toDateString();
+            $weekEnd = $weekEndDate->toDateString();
 
             Finding::query()->create([
                 'finding_date' => $weekEnd,
@@ -176,6 +197,14 @@ class MetricsService
         // Pola repetitif 5 hari kerja terakhir (indikasi “copas” sederhana untuk MVP)
         $lastFive = collect($workdays)->take(-5)->values();
         if ($lastFive->count() === 5) {
+            $endDateObj = $lastFive->last();
+            $endDateKey = $endDateObj->toDateString();
+            $endRealClose = Carbon::parse($endDateKey.' '.$setting->realization_close_time);
+            if ($endDateKey === $now->toDateString() && $now->lt($endRealClose)) {
+                // Hari ini belum selesai (realisasi belum tutup), jangan nilai repetitif dulu.
+                return;
+            }
+
             $titles = [];
             foreach ($lastFive as $d) {
                 $key = $d->toDateString();
@@ -194,7 +223,7 @@ class MetricsService
 
             $unique = collect($titles)->filter()->unique()->values();
             if ($unique->count() === 1) {
-                $endDate = $lastFive->last()->toDateString();
+                $endDate = $endDateKey;
 
                 Finding::query()->create([
                     'finding_date' => $endDate,
@@ -214,137 +243,142 @@ class MetricsService
         }
     }
 
-    private function computeScores($users, array $workdays): void
+    private function computeScores($users, array $workdays, Carbon $now, ReportSetting $setting): void
     {
-        $scoreDate = $workdays[array_key_last($workdays)]->toDateString();
-
-        // Score user (1 angka ringkas untuk periode ini).
-        $userScores = [];
-        foreach ($users as $user) {
-            $userScores[$user->id] = $this->scoreUserForPeriod($user->id, $workdays);
-
-            HealthScore::query()->create([
-                'score_date' => $scoreDate,
-                'scope_type' => 'user',
-                'scope_id' => $user->id,
-                'score' => $userScores[$user->id]['score'],
-                'components' => $userScores[$user->id],
-            ]);
-        }
-
-        // Score division (rata-rata score user di divisi)
         $byDivision = collect($users)->groupBy('division_id');
-        foreach ($byDivision as $divisionId => $divisionUsers) {
-            if (! $divisionId) {
-                continue;
+
+        foreach ($workdays as $day) {
+            $scoreDate = $day->toDateString();
+
+            // Score user (per hari)
+            $userScores = [];
+            foreach ($users as $user) {
+                $userScores[$user->id] = $this->scoreUserForDay($user->id, $day, $now, $setting);
+
+                HealthScore::query()->create([
+                    'score_date' => $scoreDate,
+                    'scope_type' => 'user',
+                    'scope_id' => $user->id,
+                    'score' => $userScores[$user->id]['score'],
+                    'components' => $userScores[$user->id],
+                ]);
             }
 
-            $scores = $divisionUsers->map(fn ($u) => $userScores[$u->id]['score'] ?? null)->filter();
-            if ($scores->isEmpty()) {
-                continue;
+            // Score division (rata-rata score user hari itu)
+            foreach ($byDivision as $divisionId => $divisionUsers) {
+                if (! $divisionId) {
+                    continue;
+                }
+
+                $scores = $divisionUsers->map(fn ($u) => $userScores[$u->id]['score'] ?? null)->filter();
+                if ($scores->isEmpty()) {
+                    continue;
+                }
+
+                $avg = (int) round($scores->avg());
+                HealthScore::query()->create([
+                    'score_date' => $scoreDate,
+                    'scope_type' => 'division',
+                    'scope_id' => (int) $divisionId,
+                    'score' => $avg,
+                    'components' => [
+                        'avg_of_users' => true,
+                        'users_count' => $scores->count(),
+                    ],
+                ]);
             }
 
-            $avg = (int) round($scores->avg());
-            HealthScore::query()->create([
-                'score_date' => $scoreDate,
-                'scope_type' => 'division',
-                'scope_id' => (int) $divisionId,
-                'score' => $avg,
-                'components' => [
-                    'avg_of_users' => true,
-                    'users_count' => $scores->count(),
-                ],
-            ]);
-        }
-
-        // Score company (rata-rata semua)
-        $all = collect($userScores)->pluck('score')->filter();
-        if ($all->isNotEmpty()) {
-            HealthScore::query()->create([
-                'score_date' => $scoreDate,
-                'scope_type' => 'company',
-                'scope_id' => null,
-                'score' => (int) round($all->avg()),
-                'components' => [
-                    'avg_of_users' => true,
-                    'users_count' => $all->count(),
-                ],
-            ]);
+            // Score company (rata-rata semua)
+            $all = collect($userScores)->pluck('score')->filter();
+            if ($all->isNotEmpty()) {
+                HealthScore::query()->create([
+                    'score_date' => $scoreDate,
+                    'scope_type' => 'company',
+                    'scope_id' => null,
+                    'score' => (int) round($all->avg()),
+                    'components' => [
+                        'avg_of_users' => true,
+                        'users_count' => $all->count(),
+                    ],
+                ]);
+            }
         }
     }
 
     /**
-     * Komposisi score MVP (bisa disesuaikan nanti via settings):
+     * Komposisi score MVP per hari (mudah dipahami untuk chart):
      * - Progress Big Rock/Roadmap (terberat)
-     * - Findings
+     * - Findings (medium/high)
      * - Missing
      * - On-time
      */
-    private function scoreUserForPeriod(int $userId, array $workdays): array
+    private function scoreUserForDay(int $userId, Carbon $day, Carbon $now, ReportSetting $setting): array
     {
-        $dateStrings = array_map(fn (Carbon $d) => $d->toDateString(), $workdays);
+        $date = $day->toDateString();
+        $isToday = $date === $now->toDateString();
 
-        $entries = DailyEntry::query()
+        /** @var DailyEntry|null $entry */
+        $entry = DailyEntry::query()
             ->where('user_id', $userId)
-            ->whereIn('entry_date', $dateStrings)
-            ->get(['id', 'entry_date', 'plan_status', 'realization_status'])
-            ->keyBy(fn (DailyEntry $e) => $e->entry_date->toDateString());
+            ->whereDate('entry_date', $date)
+            ->first(['id', 'plan_status', 'realization_status', 'plan_submitted_at', 'realization_submitted_at']);
 
-        $missingDays = 0;
-        $lateDays = 0;
-        $ontimeDays = 0;
+        $planClose = Carbon::parse($date.' '.$setting->plan_close_time);
+        $realClose = Carbon::parse($date.' '.$setting->realization_close_time);
 
-        $workedRoadmapIds = [];
-        $workedBigRockIds = [];
+        $planSubmitted = (bool) ($entry && $entry->plan_submitted_at);
+        $realSubmitted = (bool) ($entry && $entry->realization_submitted_at);
 
-        foreach ($workdays as $d) {
-            $key = $d->toDateString();
-            /** @var DailyEntry|null $entry */
-            $entry = $entries->get($key);
+        $missingPlan = (! $isToday || $now->gt($planClose)) && ! $planSubmitted;
+        $missingReal = (! $isToday || $now->gt($realClose)) && ! $realSubmitted;
+        $missing = $missingPlan || $missingReal;
 
-            if (! $entry || $entry->plan_status === 'missing' || $entry->realization_status === 'missing') {
-                $missingDays++;
-                continue;
-            }
+        $late = (bool) ($entry && ($entry->plan_status === 'late' || $entry->realization_status === 'late'));
+        $onTime = (bool) ($entry && $planSubmitted && $realSubmitted && ! $missing && ! $late);
 
-            $isLate = $entry->plan_status === 'late' || $entry->realization_status === 'late';
-            if ($isLate) {
-                $lateDays++;
-            } else {
-                $ontimeDays++;
-            }
-
-            $items = $entry->items()->get(['big_rock_id', 'roadmap_item_id', 'realization_status']);
-            foreach ($items as $it) {
-                if ($it->big_rock_id) {
-                    $workedBigRockIds[$it->big_rock_id] = true;
-                }
-                if ($it->roadmap_item_id && in_array($it->realization_status, ['done', 'partial'], true)) {
-                    $workedRoadmapIds[$it->roadmap_item_id] = true;
-                }
-            }
-        }
-
-        $totalDays = max(count($workdays), 1);
-        $ontimeRate = (int) round(($ontimeDays / $totalDays) * 100);
-
-        // Progress: seberapa banyak roadmap yang tersentuh di periode ini (indikasi “roadmap bergerak”).
+        // Progress harian: apakah roadmap disentuh hari ini (indikasi “ada gerak”).
         $totalRoadmaps = RoadmapItem::query()
             ->whereIn('big_rock_id', function ($q) use ($userId) {
                 $q->select('id')->from('big_rocks')->where('user_id', $userId)->where('status', 'active');
             })
             ->count();
 
-        $workedRoadmaps = count($workedRoadmapIds);
-        $progressRatio = $totalRoadmaps > 0 ? min(1, $workedRoadmaps / $totalRoadmaps) : (count($workedBigRockIds) > 0 ? 0.5 : 0);
+        $workedRoadmaps = 0;
+        $workedBigRocks = 0;
+
+        if ($entry) {
+            $items = $entry->items()->get(['big_rock_id', 'roadmap_item_id', 'realization_status']);
+            foreach ($items as $it) {
+                if ($it->big_rock_id) {
+                    $workedBigRocks++;
+                }
+                if ($it->roadmap_item_id && in_array($it->realization_status, ['done', 'partial'], true)) {
+                    $workedRoadmaps++;
+                }
+            }
+        }
+
+        $progressRatio = $totalRoadmaps > 0 ? min(1, $workedRoadmaps / $totalRoadmaps) : ($workedBigRocks > 0 ? 0.5 : 0);
         $progressScore = (int) round($progressRatio * 100);
 
-        // Findings (penalty) — sederhana untuk MVP, supaya mudah dipahami.
-        // Missing dan late juga ikut menurunkan score, tapi terpisah komponen.
-        $findingPenalty = 0;
+        $ontimeRate = $onTime ? 100 : 0;
+        $missingPenalty = $missing ? 30 : 0;
+        $latePenalty = $late ? 15 : 0;
 
-        $missingPenalty = min(40, $missingDays * 10);
-        $latePenalty = min(30, $lateDays * 8);
+        // Findings penalty (daily): high=15, medium=8, low=3 (cap 40)
+        $findingCounts = Finding::query()
+            ->whereDate('finding_date', $date)
+            ->where('scope_type', 'user')
+            ->where('scope_id', $userId)
+            ->selectRaw("sum(case when severity='high' then 1 else 0 end) as high_count")
+            ->selectRaw("sum(case when severity='medium' then 1 else 0 end) as medium_count")
+            ->selectRaw("sum(case when severity='low' then 1 else 0 end) as low_count")
+            ->first();
+
+        $highCount = (int) ($findingCounts?->high_count ?? 0);
+        $mediumCount = (int) ($findingCounts?->medium_count ?? 0);
+        $lowCount = (int) ($findingCounts?->low_count ?? 0);
+        $findingPenalty = min(40, ($highCount * 15) + ($mediumCount * 8) + ($lowCount * 3));
 
         // Bobot sesuai prioritas yang kamu berikan (progress > findings > missing > ontime).
         $score = (int) round(
@@ -352,7 +386,7 @@ class MetricsService
             + (0.20 * (100 - $findingPenalty))
             + (0.20 * (100 - $missingPenalty))
             + (0.15 * $ontimeRate)
-            - $latePenalty / 10 // late tetap terasa, tapi tidak terlalu “menghukum”
+            - ($latePenalty / 5)
         );
 
         $score = max(0, min(100, $score));
@@ -361,8 +395,11 @@ class MetricsService
             'score' => $score,
             'progress_score' => $progressScore,
             'ontime_rate' => $ontimeRate,
-            'missing_days' => $missingDays,
-            'late_days' => $lateDays,
+            'missing' => $missing,
+            'late' => $late,
+            'findings_high' => $highCount,
+            'findings_medium' => $mediumCount,
+            'findings_low' => $lowCount,
             'worked_roadmaps' => $workedRoadmaps,
             'total_roadmaps' => $totalRoadmaps,
         ];
@@ -377,4 +414,3 @@ class MetricsService
         return trim($v);
     }
 }
-

@@ -11,8 +11,22 @@
             ->where('scope_type', 'company')
             ->max('score_date');
 
-        $periodTo = $latestScoreDate ? \Illuminate\Support\Carbon::parse($latestScoreDate) : \Illuminate\Support\Carbon::yesterday();
-        $periodFrom = $periodTo->copy()->subDays(7);
+        $defaultTo = $latestScoreDate ? \Illuminate\Support\Carbon::parse($latestScoreDate) : \Illuminate\Support\Carbon::yesterday();
+        $defaultFrom = $defaultTo->copy()->subDays(7);
+
+        $periodFrom = $defaultFrom;
+        $periodTo = $defaultTo;
+        try {
+            if (request('from')) $periodFrom = \Illuminate\Support\Carbon::parse(request('from'));
+            if (request('to')) $periodTo = \Illuminate\Support\Carbon::parse(request('to'));
+        } catch (\Throwable $e) {
+            $periodFrom = $defaultFrom;
+            $periodTo = $defaultTo;
+        }
+
+        if ($periodFrom->gt($periodTo)) {
+            [$periodFrom, $periodTo] = [$periodTo, $periodFrom];
+        }
 
         $companyScore = \App\Models\HealthScore::query()
             ->where('scope_type', 'company')
@@ -31,7 +45,12 @@
         $lowCount = (clone $findingsQuery)->where('severity', 'low')->count();
 
         // On-time rate (sederhana untuk MVP): tidak late dan tidak missing (plan & realisasi) di hari kerja.
-        $usersCount = \App\Models\User::query()->whereIn('role', ['hod', 'manager'])->where('status', 'active')->count();
+        $activeUserIds = \App\Models\User::query()
+            ->whereIn('role', ['hod', 'manager'])
+            ->where('status', 'active')
+            ->pluck('id')
+            ->all();
+        $usersCount = count($activeUserIds);
         $workdays = [];
         $cursor = $periodFrom->copy()->startOfDay();
         while ($cursor->lte($periodTo)) {
@@ -42,7 +61,7 @@
         }
         $required = max($usersCount * max(count($workdays), 1), 1);
         $onTime = \App\Models\DailyEntry::query()
-            ->whereIn('user_id', \App\Models\User::query()->whereIn('role', ['hod', 'manager'])->where('status', 'active')->select('id'))
+            ->whereIn('user_id', $activeUserIds)
             ->whereIn('entry_date', $workdays)
             ->whereNotIn('plan_status', ['late', 'missing'])
             ->whereNotIn('realization_status', ['late', 'missing'])
@@ -101,18 +120,72 @@
                 'percentage' => $percentage,
             ];
         })->all();
+
+        // Chart data
+        $companyScoresByDate = \App\Models\HealthScore::query()
+            ->where('scope_type', 'company')
+            ->whereBetween('score_date', [$periodFrom->toDateString(), $periodTo->toDateString()])
+            ->pluck('score', 'score_date')
+            ->all();
+
+        $healthSeries = collect($workdays)->map(fn ($d) => (int) ($companyScoresByDate[$d] ?? 0))->all();
+
+        $requiredPerDay = max($usersCount, 1);
+        $onTimeCounts = \App\Models\DailyEntry::query()
+            ->whereIn('user_id', $activeUserIds)
+            ->whereIn('entry_date', $workdays)
+            ->whereNotIn('plan_status', ['late', 'missing'])
+            ->whereNotIn('realization_status', ['late', 'missing'])
+            ->selectRaw('entry_date, count(*) as total')
+            ->groupBy('entry_date')
+            ->pluck('total', 'entry_date')
+            ->all();
+
+        $complianceSeries = collect($workdays)
+            ->map(fn ($d) => (int) round(((int) ($onTimeCounts[$d] ?? 0) / $requiredPerDay) * 100))
+            ->all();
+
+        $categoryCounts = \App\Models\Finding::query()
+            ->whereBetween('finding_date', [$periodFrom->toDateString(), $periodTo->toDateString()])
+            ->whereIn('severity', ['medium', 'high'])
+            ->selectRaw('type, count(*) as total')
+            ->groupBy('type')
+            ->orderByDesc('total')
+            ->pluck('total', 'type')
+            ->all();
+
+        $categoryLabelMap = [
+            'missing_daily' => 'Missing Entry',
+            'late_weekly' => 'Terlambat Berulang',
+            'repetitive_5days' => 'Isian Berulang 5 Hari',
+        ];
+
+        $categoryLabels = [];
+        $categorySeries = [];
+        foreach ($categoryCounts as $type => $count) {
+            $categoryLabels[] = $categoryLabelMap[$type] ?? strtoupper((string) $type);
+            $categorySeries[] = (int) $count;
+        }
+
+        $chartCategories = collect($workdays)
+            ->map(fn ($d) => \Illuminate\Support\Carbon::parse($d)->translatedFormat('j M'))
+            ->all();
     @endphp
 
     {{-- Page Header --}}
     <x-ui.page-header title="Company">
         <x-slot:actions>
-            <div class="flex items-center gap-2">
-                {{-- TODO: wire:model="filterDateFrom" --}}
-                <input type="date" class="input w-40" value="2025-07-01" />
-                <span class="text-muted">—</span>
-                {{-- TODO: wire:model="filterDateTo" --}}
-                <input type="date" class="input w-40" value="2025-07-07" />
-            </div>
+            <form method="GET" class="flex items-end gap-2">
+                <div class="w-40">
+                    <label class="label">Dari</label>
+                    <input type="date" class="input" name="from" value="{{ $periodFrom->toDateString() }}" />
+                </div>
+                <div class="w-40">
+                    <label class="label">Sampai</label>
+                    <input type="date" class="input" name="to" value="{{ $periodTo->toDateString() }}" />
+                </div>
+                <button type="submit" class="btn-secondary px-4">Terapkan</button>
+            </form>
         </x-slot:actions>
     </x-ui.page-header>
 
@@ -138,14 +211,14 @@
             <h3 class="text-sm font-semibold text-text mb-4">Trend Health Score</h3>
             {{-- TODO: ApexCharts $healthTrendData --}}
             <div id="chart-health-trend" class="h-[200px] md:h-[280px] flex items-center justify-center bg-app-bg rounded-lg">
-                <p class="text-sm text-muted">📊 Health Trend Chart</p>
+                <p class="text-sm text-muted">Chart akan muncul di sini</p>
             </div>
         </x-ui.card>
         <x-ui.card>
             <h3 class="text-sm font-semibold text-text mb-4">Compliance Trend</h3>
             {{-- TODO: ApexCharts $complianceTrendData --}}
             <div id="chart-compliance-trend" class="h-[200px] md:h-[280px] flex items-center justify-center bg-app-bg rounded-lg">
-                <p class="text-sm text-muted">📊 Compliance Trend Chart</p>
+                <p class="text-sm text-muted">Chart akan muncul di sini</p>
             </div>
         </x-ui.card>
     </div>
@@ -154,7 +227,7 @@
             <h3 class="text-sm font-semibold text-text mb-4">Distribusi Kategori Exception</h3>
             {{-- TODO: ApexCharts $categoryDistributionData --}}
             <div id="chart-category-distribution" class="h-[200px] md:h-[280px] flex items-center justify-center bg-app-bg rounded-lg">
-                <p class="text-sm text-muted">📊 Category Distribution Chart</p>
+                <p class="text-sm text-muted">Chart akan muncul di sini</p>
             </div>
         </x-ui.card>
     </div>
@@ -170,7 +243,7 @@
                         <p class="text-sm font-medium text-text">{{ $finding['title'] }}</p>
                         <x-ui.severity-badge :severity="$finding['severity']" />
                     </div>
-                    <p class="text-xs text-muted mt-1">{{ $finding['user'] }} · {{ $finding['division'] }} · {{ $finding['date'] }}</p>
+                    <p class="text-xs text-muted mt-1">{{ $finding['user'] }} &middot; {{ $finding['division'] }} &middot; {{ $finding['date'] }}</p>
                 </div>
             @endforeach
         </x-ui.card>
@@ -193,3 +266,74 @@
         </x-ui.card>
     </div>
 </x-layouts.app>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (!window.ApexCharts) return;
+
+    const categories = @json($chartCategories ?? []);
+    const health = @json($healthSeries ?? []);
+    const compliance = @json($complianceSeries ?? []);
+    const catLabels = @json($categoryLabels ?? []);
+    const catSeries = @json($categorySeries ?? []);
+
+    const base = {
+        chart: { toolbar: { show: false }, fontFamily: 'Inter, ui-sans-serif, system-ui' },
+        grid: { borderColor: 'rgba(226,230,234,0.7)' },
+        dataLabels: { enabled: false },
+        legend: { position: 'bottom' },
+    };
+
+    const primary = '#1E3A5F';
+    const success = '#1A7F4B';
+    const palette = ['#1E3A5F', '#B91C1C', '#B45309', '#1D4ED8', '#1A7F4B'];
+
+    window.__daytaCharts = window.__daytaCharts || {};
+
+    function renderChart(elId, chartFactory) {
+        const el = document.querySelector(elId);
+        if (!el) return;
+
+        if (window.__daytaCharts[elId]) {
+            try { window.__daytaCharts[elId].destroy(); } catch (e) {}
+        }
+
+        el.innerHTML = '';
+        window.__daytaCharts[elId] = chartFactory(el);
+        window.__daytaCharts[elId].render();
+    }
+
+    renderChart('#chart-health-trend', (el) => new ApexCharts(el, {
+        ...base,
+        chart: { ...base.chart, type: 'line', height: '100%' },
+        colors: [primary],
+        stroke: { width: 3, curve: 'smooth' },
+        series: [{ name: 'Health', data: health }],
+        xaxis: { categories, labels: { rotate: -30 } },
+        yaxis: { min: 0, max: 100 },
+        tooltip: { shared: true },
+    }));
+
+    renderChart('#chart-compliance-trend', (el) => new ApexCharts(el, {
+        ...base,
+        chart: { ...base.chart, type: 'line', height: '100%' },
+        colors: [success],
+        stroke: { width: 3, curve: 'smooth' },
+        series: [{ name: 'Compliance %', data: compliance }],
+        xaxis: { categories, labels: { rotate: -30 } },
+        yaxis: { min: 0, max: 100 },
+        tooltip: { shared: true },
+    }));
+
+    renderChart('#chart-category-distribution', (el) => new ApexCharts(el, {
+        ...base,
+        chart: { ...base.chart, type: 'donut', height: '100%' },
+        labels: catLabels.length ? catLabels : ['Belum ada data'],
+        colors: palette.slice(0, Math.max(catLabels.length, 1)),
+        series: catSeries.length ? catSeries : [1],
+        legend: { position: 'bottom' },
+        dataLabels: { enabled: true },
+        tooltip: { y: { formatter: (v) => `${v} temuan` } },
+    }));
+});
+</script>

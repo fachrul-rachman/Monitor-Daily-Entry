@@ -7,35 +7,111 @@
 
 <x-layouts.app title="Dashboard">
     @php
-        $todayDate = 'Senin, 7 Juli 2025';
+        $user = auth()->user();
+        $today = \Illuminate\Support\Carbon::today();
+        $todayDate = $today->translatedFormat('l, j F Y');
+
+        $setting = \App\Models\ReportSetting::current();
+        $planWindowInfo = sprintf(
+            '%s - %s',
+            \Illuminate\Support\Carbon::parse($setting->plan_open_time)->format('H:i'),
+            \Illuminate\Support\Carbon::parse($setting->plan_close_time)->format('H:i'),
+        );
+        $realizationWindowInfo = sprintf(
+            '%s - %s',
+            \Illuminate\Support\Carbon::parse($setting->realization_open_time)->format('H:i'),
+            \Illuminate\Support\Carbon::parse($setting->realization_close_time)->format('H:i'),
+        );
+
+        $todayEntry = \App\Models\DailyEntry::query()
+            ->where('user_id', $user->id)
+            ->whereDate('entry_date', $today->toDateString())
+            ->first();
+
+        $planItemsToday = 0;
+        $realizedItemsToday = 0;
+
+        if ($todayEntry) {
+            $planItemsToday = \App\Models\DailyEntryItem::query()
+                ->where('daily_entry_id', $todayEntry->id)
+                ->whereNotNull('plan_title')
+                ->count();
+
+            $realizedItemsToday = \App\Models\DailyEntryItem::query()
+                ->where('daily_entry_id', $todayEntry->id)
+                ->whereNotNull('plan_title')
+                ->whereNotNull('realization_status')
+                ->count();
+        }
+
+        $pendingRealization = max($planItemsToday - $realizedItemsToday, 0);
+        $planFilled = $planItemsToday > 0;
+        $realizationFilled = $planFilled && $pendingRealization === 0;
+
+        $activeBigRockCount = \App\Models\BigRock::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'active')
+            ->count();
+
         $summaryCards = [
-            'plan_today' => ['value' => 2, 'label' => 'Sudah diisi'],
-            'realization_today' => ['value' => 0, 'label' => 'Belum diisi'],
-            'big_rock_active' => ['value' => 2, 'label' => 'Aktif'],
-            'recent_findings' => ['value' => 1, 'label' => 'Minggu ini'],
-        ];
-        $planFilled = true;
-        $realizationFilled = false;
-
-        $activeRoadmapItems = [
-            ['title' => 'Review dokumen procurement', 'big_rock' => 'Optimasi Proses', 'roadmap' => 'Implementasi SOP', 'status' => 'in_progress'],
-            ['title' => 'Training modul baru', 'big_rock' => 'Pengembangan SDM', 'roadmap' => 'Training Tim', 'status' => 'planned'],
-            ['title' => 'Evaluasi vendor Q3', 'big_rock' => 'Optimasi Proses', 'roadmap' => 'Audit Proses', 'status' => 'not_started'],
+            'plan_today' => ['value' => $planItemsToday, 'label' => $planFilled ? 'Sudah diisi' : 'Belum diisi'],
+            'realization_today' => ['value' => $pendingRealization, 'label' => $realizationFilled ? 'Sudah diisi' : 'Belum diisi'],
+            'big_rock_active' => ['value' => $activeBigRockCount, 'label' => 'Aktif'],
         ];
 
-        $recentHistory = [
-            ['title' => 'Review dokumen procurement', 'date' => '7 Jul', 'plan' => 'submitted', 'real' => 'missing'],
-            ['title' => 'Koordinasi tim lapangan', 'date' => '7 Jul', 'plan' => 'submitted', 'real' => 'finished'],
-            ['title' => 'Meeting komite SOP', 'date' => '4 Jul', 'plan' => 'submitted', 'real' => 'in_progress'],
-            ['title' => 'Finalisasi budget Q3', 'date' => '3 Jul', 'plan' => 'late', 'real' => 'finished'],
-            ['title' => 'Review performa tim', 'date' => '3 Jul', 'plan' => 'submitted', 'real' => 'not_finished'],
-        ];
+        $activeRoadmapItems = \App\Models\RoadmapItem::query()
+            ->with(['bigRock:id,title'])
+            ->whereIn('big_rock_id', \App\Models\BigRock::query()
+                ->where('user_id', $user->id)
+                ->where('status', 'active')
+                ->select('id'))
+            ->orderBy('sort_order')
+            ->limit(5)
+            ->get()
+            ->map(fn ($ri) => [
+                'title' => $ri->title,
+                'big_rock' => $ri->bigRock?->title ?? '—',
+                'roadmap' => $ri->title,
+                'status' => $ri->status,
+            ])
+            ->all();
+
+        $recentEntries = \App\Models\DailyEntry::query()
+            ->where('user_id', $user->id)
+            ->whereDate('entry_date', '<=', $today->toDateString())
+            ->orderByDesc('entry_date')
+            ->limit(7)
+            ->get(['id', 'entry_date', 'plan_status', 'realization_status']);
+
+        $entryIds = $recentEntries->pluck('id')->all();
+        $itemsByEntry = \App\Models\DailyEntryItem::query()
+            ->whereIn('daily_entry_id', $entryIds)
+            ->orderBy('id')
+            ->get(['daily_entry_id', 'plan_title', 'realization_status'])
+            ->groupBy('daily_entry_id');
+
+        $recentHistory = $recentEntries->map(function ($e) use ($itemsByEntry) {
+            $items = $itemsByEntry[$e->id] ?? collect();
+            $planCount = $items->whereNotNull('plan_title')->count();
+            $realCount = $items->whereNotNull('plan_title')->whereNotNull('realization_status')->count();
+            $title = $items->first()?->plan_title ?? '—';
+
+            $planStatus = $planCount === 0 ? 'missing' : ($e->plan_status ?: 'submitted');
+            $realStatus = $planCount === 0 ? 'missing' : (($realCount >= $planCount) ? ($e->realization_status ?: 'submitted') : 'missing');
+
+            return [
+                'title' => $title,
+                'date' => \Illuminate\Support\Carbon::parse($e->entry_date)->translatedFormat('j M'),
+                'plan' => $planStatus,
+                'real' => $realStatus,
+            ];
+        })->all();
     @endphp
 
     <x-ui.page-header title="Dashboard" :description="$todayDate" />
 
-    {{-- Summary Cards 2x2 --}}
-    <div class="grid grid-cols-2 gap-4 mb-6">
+    {{-- Summary Cards --}}
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <x-ui.summary-card
             label="Status Plan Hari Ini"
             :value="$summaryCards['plan_today']['value']"
@@ -53,12 +129,6 @@
             :value="$summaryCards['big_rock_active']['value']"
             :context="$summaryCards['big_rock_active']['label']"
         />
-        <x-ui.summary-card
-            label="Temuan Terbaru"
-            :value="$summaryCards['recent_findings']['value']"
-            :context="$summaryCards['recent_findings']['label']"
-            :border="$summaryCards['recent_findings']['value'] > 0 ? 'danger' : null"
-        />
     </div>
 
     {{-- CTA utama — sangat prominent --}}
@@ -71,11 +141,10 @@
                     </div>
                     <div>
                         <p class="font-semibold text-primary text-base">Plan Hari Ini Belum Diisi</p>
-                        <p class="text-sm text-primary/70">Window Plan: 08:00 – 17:00. Segera isi plan harian Anda.</p>
+                        <p class="text-sm text-primary/70">Window Plan: {{ $planWindowInfo }}. Segera isi plan harian Anda.</p>
                     </div>
                 </div>
-                {{-- TODO: href ke route('manager.daily-entry') --}}
-                <a href="#" class="btn-primary shrink-0 text-base px-6 py-3">Isi Plan Sekarang</a>
+                <a href="{{ route('manager.daily-entry') }}" class="btn-primary shrink-0 text-base px-6 py-3">Isi Plan Sekarang</a>
             </div>
         </div>
     @elseif(!$realizationFilled)
@@ -87,10 +156,10 @@
                     </div>
                     <div>
                         <p class="font-semibold text-warning text-base">Realisasi Belum Diisi</p>
-                        <p class="text-sm text-warning/70">Window Realisasi: 15:00 – 23:59. Isi realisasi sebelum tutup.</p>
+                        <p class="text-sm text-warning/70">Window Realisasi: {{ $realizationWindowInfo }}. Isi realisasi sebelum tutup.</p>
                     </div>
                 </div>
-                <a href="#" class="btn-primary shrink-0 text-base px-6 py-3">Isi Realisasi</a>
+                <a href="{{ route('manager.daily-entry') }}" class="btn-primary shrink-0 text-base px-6 py-3">Isi Realisasi</a>
             </div>
         </div>
     @else
@@ -104,7 +173,7 @@
     <div class="mb-6">
         <h3 class="text-sm font-semibold text-text mb-3">Roadmap Item Aktif</h3>
         <div class="space-y-2">
-            @foreach($activeRoadmapItems as $item)
+            @forelse($activeRoadmapItems as $item)
                 <x-ui.card class="!py-3">
                     <div class="flex items-center justify-between">
                         <div class="flex-1 min-w-0">
@@ -118,7 +187,9 @@
                         <x-ui.status-badge :status="$item['status']" />
                     </div>
                 </x-ui.card>
-            @endforeach
+            @empty
+                <x-ui.empty-state title="Belum ada roadmap aktif" icon="document" class="py-8" />
+            @endforelse
         </div>
     </div>
 
@@ -126,7 +197,7 @@
     <div class="mb-6">
         <h3 class="text-sm font-semibold text-text mb-3">Riwayat Terbaru</h3>
         <div class="space-y-2">
-            @foreach($recentHistory as $entry)
+            @forelse($recentHistory as $entry)
                 <x-ui.card class="!py-3">
                     <div class="flex items-start justify-between">
                         <div class="flex-1 min-w-0">
@@ -139,9 +210,10 @@
                         </div>
                     </div>
                 </x-ui.card>
-            @endforeach
+            @empty
+                <x-ui.empty-state title="Belum ada riwayat" icon="calendar" class="py-8" />
+            @endforelse
         </div>
-        {{-- TODO: href ke route('manager.history') --}}
-        <a href="#" class="text-sm text-primary font-medium mt-3 inline-block hover:underline">Lihat Semua Riwayat →</a>
+        <a href="{{ route('manager.history') }}" class="text-sm text-primary font-medium mt-3 inline-block hover:underline">Lihat Semua Riwayat &rarr;</a>
     </div>
 </x-layouts.app>

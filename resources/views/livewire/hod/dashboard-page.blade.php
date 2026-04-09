@@ -152,8 +152,7 @@
                         <p class="text-xs text-primary/70">Window Plan: {{ $planWindowInfo }}</p>
                     </div>
                 </div>
-                {{-- TODO: href ke daily-entry --}}
-                <a href="#" class="btn-primary shrink-0">Isi Plan Sekarang</a>
+                <a href="{{ route('hod.daily-entry') }}" class="btn-primary shrink-0">Isi Plan Sekarang</a>
             </div>
         </div>
     @elseif(!$realizationFilled)
@@ -168,7 +167,7 @@
                         <p class="text-xs text-warning/70">Window Realisasi: {{ $realizationWindowInfo }}</p>
                     </div>
                 </div>
-                <a href="#" class="btn-primary shrink-0">Isi Realisasi</a>
+                <a href="{{ route('hod.daily-entry') }}" class="btn-primary shrink-0">Isi Realisasi</a>
             </div>
         </div>
     @endif
@@ -219,19 +218,19 @@
 
     {{-- Quick Actions --}}
     <div class="flex flex-wrap gap-3">
-        <a href="#" class="btn-secondary gap-2">
+        <a href="{{ route('hod.history') }}" class="btn-secondary gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             Riwayat Entry
         </a>
-        <a href="#" class="btn-secondary gap-2">
+        <a href="{{ route('hod.big-rock') }}" class="btn-secondary gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
             Big Rock
         </a>
-        <a href="#" class="btn-secondary gap-2">
+        <a href="{{ route('hod.division-entries') }}" class="btn-secondary gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             Lihat Entry Divisi
         </a>
-        <a href="#" class="btn-secondary gap-2">
+        <a href="{{ route('hod.ai-chat') }}" class="btn-secondary gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
             AI Chat
         </a>

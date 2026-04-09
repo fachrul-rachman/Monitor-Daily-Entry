@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\BigRock;
 use App\Models\Division;
 use App\Models\HodAssignment;
+use App\Models\LeaveRequest;
 use App\Models\ReportSetting;
 use App\Models\RoadmapItem;
 use App\Models\User;
@@ -177,5 +178,10 @@ class DatabaseSeeder extends Seeder
 
         // Seed demo data 1 minggu terakhir (khusus HoD & Manager) agar UI terasa lebih "real".
         $this->call(WeeklyDemoDataSeeder::class);
+
+        // Seed demo cuti/izin agar halaman Admin/Director "Cuti & Izin" tidak kosong saat testing.
+        if (class_exists(LeaveRequest::class)) {
+            $this->call(LeaveDemoSeeder::class);
+        }
     }
 }

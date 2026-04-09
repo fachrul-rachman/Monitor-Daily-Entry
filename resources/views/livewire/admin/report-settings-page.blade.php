@@ -18,11 +18,11 @@
             <div class="grid grid-cols-2 gap-3 text-sm">
                 <div>
                     <p class="text-xs text-muted">Plan Window</p>
-                    <p class="text-text font-medium">{{ $currentSettings['plan_open'] }} – {{ $currentSettings['plan_close'] }}</p>
+                    <p class="text-text font-medium">{{ $currentSettings['plan_open'] }} - {{ $currentSettings['plan_close'] }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-muted">Realisasi Window</p>
-                    <p class="text-text font-medium">{{ $currentSettings['realization_open'] }} – {{ $currentSettings['realization_close'] }}</p>
+                    <p class="text-text font-medium">{{ $currentSettings['realization_open'] }} - {{ $currentSettings['realization_close'] }}</p>
                 </div>
             </div>
         </div>
@@ -72,19 +72,65 @@
                 <p class="text-xs text-muted mt-2">Realisasi diisi setelah jam kerja selesai.</p>
             </div>
 
+            {{-- Discord Section --}}
+            <div>
+                <h3 class="text-base font-semibold text-text mb-3" style="font-family: 'DM Sans', sans-serif;">Notifikasi Discord</h3>
+
+                <div class="bg-app-bg border border-border rounded-xl p-4 mb-4">
+                    <p class="text-sm text-text font-medium">Executive summary untuk Director</p>
+                    <p class="text-xs text-muted mt-1">Sistem mengirim ringkasan temuan hari itu ke Discord (hanya medium & high). Jika tidak ada temuan, sistem tidak mengirim.</p>
+                </div>
+
+                <label class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer min-h-[44px] transition-colors {{ $discordEnabled ? 'border-primary bg-primary-light text-primary' : 'border-border bg-surface text-text' }}">
+                    <input type="checkbox" wire:model.live="discordEnabled" class="w-4 h-4 rounded accent-primary border-border">
+                    <span class="text-sm font-medium">Aktifkan Discord summary</span>
+                </label>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <label class="label">Jam Kirim (WIB)</label>
+                        <input type="time" class="input @error('discordSummaryTime') input-error @enderror" wire:model="discordSummaryTime" />
+                        @error('discordSummaryTime') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="label">Webhook URL</label>
+                        <input type="text" class="input @error('discordWebhookUrl') input-error @enderror" placeholder="https://discord.com/api/webhooks/..." wire:model.defer="discordWebhookUrl" />
+                        @error('discordWebhookUrl') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+
+                <p class="text-xs text-muted mt-2">Webhook ini cukup 1 untuk semua ringkasan harian.</p>
+            </div>
+
             {{-- Submit --}}
-            <button
-                type="submit"
-                class="btn-primary w-full md:w-auto flex items-center justify-center gap-2"
-                wire:loading.attr="disabled"
-                wire:target="save"
-            >
-                <span wire:loading.remove wire:target="save">Simpan Pengaturan</span>
-                <span wire:loading wire:target="save" class="flex items-center gap-2">
-                    <span class="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
-                    <span>Menyimpan...</span>
-                </span>
-            </button>
+            <div class="flex flex-col md:flex-row gap-2">
+                <button
+                    type="submit"
+                    class="btn-primary w-full md:w-auto flex items-center justify-center gap-2"
+                    wire:loading.attr="disabled"
+                    wire:target="save"
+                >
+                    <span wire:loading.remove wire:target="save">Simpan Pengaturan</span>
+                    <span wire:loading wire:target="save" class="flex items-center gap-2">
+                        <span class="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
+                        <span>Menyimpan...</span>
+                    </span>
+                </button>
+
+                <button
+                    type="button"
+                    class="btn-secondary w-full md:w-auto flex items-center justify-center gap-2"
+                    wire:click="testDiscordToday"
+                    wire:loading.attr="disabled"
+                    wire:target="testDiscordToday"
+                >
+                    <span wire:loading.remove wire:target="testDiscordToday">Test Kirim Hari Ini</span>
+                    <span wire:loading wire:target="testDiscordToday" class="flex items-center gap-2">
+                        <span class="inline-block w-4 h-4 border-2 border-text/20 border-t-text rounded-full animate-spin"></span>
+                        <span>Mengirim...</span>
+                    </span>
+                </button>
+            </div>
         </form>
     </div>
 </div>

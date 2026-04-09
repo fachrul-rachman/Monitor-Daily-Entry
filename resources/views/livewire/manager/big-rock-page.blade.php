@@ -12,13 +12,54 @@
 
 <x-layouts.app title="Big Rock">
     @php
-        $bigRocks = [
-            ['id' => 1, 'title' => 'Optimasi Proses Operasional Q3', 'description' => 'Meningkatkan efisiensi operasional melalui perbaikan SOP dan sistem.', 'start' => '1 Jul 2025', 'end' => '30 Sep 2025', 'status' => 'active', 'roadmap_count' => 4, 'progress' => 60],
-            ['id' => 2, 'title' => 'Pengembangan SDM Tim', 'description' => 'Program pelatihan dan evaluasi kompetensi seluruh tim divisi.', 'start' => '15 Jun 2025', 'end' => '30 Aug 2025', 'status' => 'active', 'roadmap_count' => 3, 'progress' => 35],
-            ['id' => 3, 'title' => 'Digitalisasi Laporan', 'description' => 'Migrasi laporan manual ke sistem digital terintegrasi.', 'start' => '1 Apr 2025', 'end' => '30 Jun 2025', 'status' => 'completed', 'roadmap_count' => 2, 'progress' => 100],
-        ];
-        // TODO: Gunakan $canManageBigRock = auth()->user()->can('create', BigRock::class)
-        $canManageBigRock = true; // sementara true — ubah ke false untuk mode view-only
+        $user = auth()->user();
+
+        // Fokus: tampilkan data asli (non-dummy). CRUD Big Rock akan diaktifkan setelah Livewire-nya siap.
+        $canManageBigRock = false;
+
+        $bigRockModels = \App\Models\BigRock::query()
+            ->where('user_id', $user->id)
+            ->orderByDesc('start_date')
+            ->orderByDesc('id')
+            ->get();
+
+        $roadmapByBigRock = \App\Models\RoadmapItem::query()
+            ->whereIn('big_rock_id', $bigRockModels->pluck('id')->all())
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get(['id', 'big_rock_id', 'title', 'status'])
+            ->groupBy('big_rock_id');
+
+        $doneStatuses = ['done', 'finished', 'completed'];
+
+        $bigRocks = $bigRockModels
+            ->map(function (\App\Models\BigRock $br) use ($roadmapByBigRock, $doneStatuses) {
+                $roadmaps = ($roadmapByBigRock[$br->id] ?? collect())
+                    ->map(fn ($rm) => [
+                        'id' => (int) $rm->id,
+                        'title' => $rm->title,
+                        'status' => $rm->status,
+                    ])
+                    ->values()
+                    ->all();
+
+                $total = count($roadmaps);
+                $done = collect($roadmaps)->filter(fn ($rm) => in_array($rm['status'], $doneStatuses, true))->count();
+                $progress = $total > 0 ? (int) round(($done / $total) * 100) : 0;
+
+                return [
+                    'id' => (int) $br->id,
+                    'title' => $br->title,
+                    'description' => $br->description ?: '',
+                    'start' => $br->start_date ? \Illuminate\Support\Carbon::parse($br->start_date)->translatedFormat('j M Y') : '—',
+                    'end' => $br->end_date ? \Illuminate\Support\Carbon::parse($br->end_date)->translatedFormat('j M Y') : '—',
+                    'status' => $br->status ?: 'active',
+                    'roadmap_count' => $total,
+                    'progress' => $progress,
+                    'roadmaps' => $roadmaps,
+                ];
+            })
+            ->all();
     @endphp
 
     <x-ui.page-header title="Big Rock" description="Kelola big rock dan roadmap item">
@@ -33,10 +74,24 @@
         @endif
     </x-ui.page-header>
 
-    <div x-data="{ roadmapOpen: false, selectedBigRock: null }">
+    <div x-data="{
+        roadmapOpen: false,
+        selectedBigRock: null,
+        badge(status) {
+            const map = {
+                planned:     { label: 'Planned',           cls: 'badge-info' },
+                in_progress: { label: 'Sedang Berjalan',   cls: 'badge-warning' },
+                blocked:     { label: 'Blocked',           cls: 'badge-danger' },
+                done:        { label: 'Done',              cls: 'badge-success' },
+                finished:    { label: 'Selesai',           cls: 'badge-success' },
+                completed:   { label: 'Selesai',           cls: 'badge-success' },
+            };
+            return map[status] || { label: (status || 'Unknown'), cls: 'badge-muted' };
+        }
+    }">
         {{-- Big Rock Card List --}}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            @foreach($bigRocks as $br)
+            @forelse($bigRocks as $br)
                 <x-ui.card class="flex flex-col">
                     <div class="flex items-start justify-between mb-2">
                         <x-ui.status-badge :status="$br['status']" />
@@ -60,7 +115,7 @@
                     <p class="text-xs text-muted line-clamp-2 mb-3">{{ $br['description'] }}</p>
 
                     <div class="text-xs text-muted mb-3">
-                        {{ $br['start'] }} — {{ $br['end'] }}
+                        {{ $br['start'] }} &mdash; {{ $br['end'] }}
                     </div>
 
                     {{-- Progress --}}
@@ -86,7 +141,16 @@
                         </button>
                     </div>
                 </x-ui.card>
-            @endforeach
+            @empty
+                <div class="lg:col-span-3">
+                    <x-ui.empty-state
+                        icon="document"
+                        title="Belum ada Big Rock"
+                        description="Big Rock Anda akan muncul di sini setelah dibuat."
+                        class="py-12"
+                    />
+                </div>
+            @endforelse
         </div>
 
         {{-- Roadmap Manager Panel (Slide Over) --}}
@@ -101,38 +165,36 @@
                         <h3 class="font-semibold text-text">Roadmap Items</h3>
                         <p class="text-xs text-muted" x-text="selectedBigRock?.title"></p>
                     </div>
-                    <button @click="roadmapOpen = false" class="text-muted hover:text-text">✕</button>
+                    <button @click="roadmapOpen = false" class="text-muted hover:text-text">&times;</button>
                 </div>
                 <div class="p-5">
-                    @php
-                        $dummyRoadmaps = [
-                            ['id' => 1, 'title' => 'Implementasi SOP Baru', 'status' => 'in_progress'],
-                            ['id' => 2, 'title' => 'Audit Proses Existing', 'status' => 'planned'],
-                            ['id' => 3, 'title' => 'Sosialisasi ke Tim', 'status' => 'not_started'],
-                            ['id' => 4, 'title' => 'Evaluasi & Perbaikan', 'status' => 'not_started'],
-                        ];
-                    @endphp
                     <div class="space-y-2 mb-6">
-                        @foreach($dummyRoadmaps as $idx => $rm)
+                        <template x-if="(selectedBigRock?.roadmaps || []).length === 0">
+                            <div class="rounded-xl border border-border bg-app-bg px-4 py-3">
+                                <p class="text-sm font-semibold text-text">Belum ada roadmap item</p>
+                                <p class="text-xs text-muted mt-1">Roadmap item untuk big rock ini akan muncul di sini.</p>
+                            </div>
+                        </template>
+
+                        <template x-for="(rm, idx) in (selectedBigRock?.roadmaps || [])" :key="rm.id">
                             <div class="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-app-bg transition-colors group">
-                                <span class="text-xs font-mono text-muted bg-app-bg w-6 h-6 rounded flex items-center justify-center shrink-0">{{ $idx + 1 }}</span>
+                                <span class="text-xs font-mono text-muted bg-app-bg w-6 h-6 rounded flex items-center justify-center shrink-0" x-text="idx + 1"></span>
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-medium text-text truncate">{{ $rm['title'] }}</p>
+                                    <p class="text-sm font-medium text-text truncate" x-text="rm.title"></p>
                                 </div>
-                                <x-ui.status-badge :status="$rm['status']" />
-                                @if($canManageBigRock)
-                                    {{-- TODO: Sembunyikan actions jika view-only --}}
+                                <span :class="badge(rm.status).cls" x-text="badge(rm.status).label"></span>
+                                <template x-if="@json($canManageBigRock)">
                                     <div class="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button class="p-1.5 rounded hover:bg-app-bg text-muted hover:text-primary" title="Edit">
+                                        <button type="button" class="p-1.5 rounded hover:bg-app-bg text-muted hover:text-primary" title="Edit">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                         </button>
-                                        <button class="p-1.5 rounded hover:bg-app-bg text-muted hover:text-danger" title="Hapus">
+                                        <button type="button" class="p-1.5 rounded hover:bg-app-bg text-muted hover:text-danger" title="Hapus">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                         </button>
                                     </div>
-                                @endif
+                                </template>
                             </div>
-                        @endforeach
+                        </template>
                     </div>
 
                     {{-- Inline add form (only if can manage) --}}

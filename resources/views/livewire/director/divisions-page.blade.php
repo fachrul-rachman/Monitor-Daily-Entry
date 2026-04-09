@@ -6,50 +6,193 @@
 
 <x-layouts.app title="Divisi">
     @php
-        $divisions = [
-            ['id' => 1, 'name' => 'Operasional'],
-            ['id' => 2, 'name' => 'Keuangan'],
-            ['id' => 3, 'name' => 'IT'],
-            ['id' => 4, 'name' => 'Marketing'],
-        ];
-        $selectedDivision = 1;
+        $divisions = \App\Models\Division::query()
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn ($d) => ['id' => (int) $d->id, 'name' => $d->name])
+            ->all();
+
+        $selectedDivision = (int) (request('division') ?: ($divisions[0]['id'] ?? 0));
+        if (! in_array($selectedDivision, array_column($divisions, 'id'), true)) {
+            $selectedDivision = (int) ($divisions[0]['id'] ?? 0);
+        }
+
+        $latestScoreDate = \App\Models\HealthScore::query()
+            ->where('scope_type', 'division')
+            ->max('score_date');
+
+        $defaultTo = $latestScoreDate ? \Illuminate\Support\Carbon::parse($latestScoreDate) : \Illuminate\Support\Carbon::yesterday();
+        $defaultFrom = $defaultTo->copy()->subDays(7);
+
+        $periodFrom = $defaultFrom;
+        $periodTo = $defaultTo;
+        try {
+            if (request('from')) $periodFrom = \Illuminate\Support\Carbon::parse(request('from'));
+            if (request('to')) $periodTo = \Illuminate\Support\Carbon::parse(request('to'));
+        } catch (\Throwable $e) {
+            $periodFrom = $defaultFrom;
+            $periodTo = $defaultTo;
+        }
+
+        if ($periodFrom->gt($periodTo)) {
+            [$periodFrom, $periodTo] = [$periodTo, $periodFrom];
+        }
+
+        $workdays = [];
+        $cursor = $periodFrom->copy()->startOfDay();
+        while ($cursor->lte($periodTo)) {
+            if (! $cursor->isWeekend()) {
+                $workdays[] = $cursor->toDateString();
+            }
+            $cursor->addDay();
+        }
+
+        $divisionHealthScore = (int) (\App\Models\HealthScore::query()
+            ->where('scope_type', 'division')
+            ->where('scope_id', $selectedDivision)
+            ->whereDate('score_date', $periodTo->toDateString())
+            ->value('score') ?? 0);
+
+        $totalFindings = \App\Models\Finding::query()
+            ->whereBetween('finding_date', [$periodFrom->toDateString(), $periodTo->toDateString()])
+            ->whereIn('severity', ['medium', 'high'])
+            ->where('division_id', $selectedDivision)
+            ->count();
+
+        $divisionUserIds = \App\Models\User::query()
+            ->where('division_id', $selectedDivision)
+            ->whereIn('role', ['hod', 'manager'])
+            ->where('status', 'active')
+            ->pluck('id')
+            ->all();
+
+        $missingEntries = \App\Models\DailyEntry::query()
+            ->whereIn('user_id', $divisionUserIds)
+            ->whereIn('entry_date', $workdays)
+            ->where(function ($q) {
+                $q->where('plan_status', 'missing')->orWhere('realization_status', 'missing');
+            })
+            ->count();
+
         $summaryCards = [
-            'health_score' => 42,
-            'total_findings' => 8,
-            'missing_entries' => 3,
-            'stagnant_roadmap' => 2,
+            'health_score' => $divisionHealthScore,
+            'total_findings' => $totalFindings,
+            'missing_entries' => $missingEntries,
+            'stagnant_roadmap' => 0,
         ];
-        $peopleWithFindings = [
-            ['name' => 'Budi Santoso', 'role' => 'Manager', 'findings' => 4, 'severity' => 'major'],
-            ['name' => 'Rudi Hermawan', 'role' => 'Manager', 'findings' => 2, 'severity' => 'medium'],
-            ['name' => 'Eko Prasetyo', 'role' => 'Manager', 'findings' => 1, 'severity' => 'minor'],
-            ['name' => 'Dian Sari', 'role' => 'Manager', 'findings' => 1, 'severity' => 'minor'],
-        ];
-        $latestMajorFindings = [
-            ['id' => 1, 'title' => 'Missing plan 3 hari berturut', 'user' => 'Budi Santoso', 'severity' => 'major', 'rule' => 'RULE-001: Missing submission > 2 hari', 'date' => '7 Jul 2025'],
-            ['id' => 2, 'title' => 'Realisasi blocked tanpa eskalasi', 'user' => 'Budi Santoso', 'severity' => 'major', 'rule' => 'RULE-005: Blocked tanpa eskalasi > 1 hari', 'date' => '6 Jul 2025'],
-            ['id' => 3, 'title' => 'Late submission berulang', 'user' => 'Rudi Hermawan', 'severity' => 'medium', 'rule' => 'RULE-003: Late > 3x per minggu', 'date' => '5 Jul 2025'],
-        ];
-        $stagnantRoadmapItems = [
-            ['title' => 'Implementasi SOP Baru', 'big_rock' => 'Optimasi Proses', 'days_stagnant' => 14, 'status' => 'planned'],
-            ['title' => 'Training Tim Lapangan', 'big_rock' => 'Pengembangan SDM', 'days_stagnant' => 21, 'status' => 'in_progress'],
-        ];
+
+        $findingByUser = \App\Models\Finding::query()
+            ->whereBetween('finding_date', [$periodFrom->toDateString(), $periodTo->toDateString()])
+            ->whereIn('severity', ['medium', 'high'])
+            ->where('division_id', $selectedDivision)
+            ->selectRaw('user_id, count(*) as total')
+            ->groupBy('user_id')
+            ->orderByDesc('total')
+            ->limit(10)
+            ->get();
+
+        $userNameById = \App\Models\User::query()->whereIn('id', $findingByUser->pluck('user_id')->all())->pluck('name', 'id')->all();
+        $userRoleById = \App\Models\User::query()->whereIn('id', $findingByUser->pluck('user_id')->all())->pluck('role', 'id')->all();
+
+        $userMaxSeverity = \App\Models\Finding::query()
+            ->whereBetween('finding_date', [$periodFrom->toDateString(), $periodTo->toDateString()])
+            ->whereIn('severity', ['medium', 'high'])
+            ->where('division_id', $selectedDivision)
+            ->selectRaw("user_id, max(case when severity='high' then 2 when severity='medium' then 1 else 0 end) as sev")
+            ->groupBy('user_id')
+            ->pluck('sev', 'user_id')
+            ->all();
+
+        $peopleWithFindings = $findingByUser->map(function ($row) use ($userNameById, $userRoleById, $userMaxSeverity) {
+            $sev = (int) ($userMaxSeverity[$row->user_id] ?? 0);
+            $severity = $sev >= 2 ? 'major' : ($sev === 1 ? 'medium' : 'minor');
+            $role = ($userRoleById[$row->user_id] ?? 'manager') === 'hod' ? 'HoD' : 'Manager';
+
+            return [
+                'name' => $userNameById[$row->user_id] ?? '—',
+                'role' => $role,
+                'findings' => (int) $row->total,
+                'severity' => $severity,
+            ];
+        })->all();
+
+        $latestMajorFindings = \App\Models\Finding::query()
+            ->with(['user:id,name'])
+            ->whereBetween('finding_date', [$periodFrom->toDateString(), $periodTo->toDateString()])
+            ->whereIn('severity', ['medium', 'high'])
+            ->where('division_id', $selectedDivision)
+            ->orderByDesc('finding_date')
+            ->orderByDesc('id')
+            ->limit(10)
+            ->get()
+            ->map(function ($f) {
+                $severity = $f->severity === 'high' ? 'major' : ($f->severity === 'medium' ? 'medium' : 'minor');
+                return [
+                    'id' => $f->id,
+                    'title' => $f->title,
+                    'user' => $f->user?->name ?? '—',
+                    'severity' => $severity,
+                    'rule' => strtoupper($f->type),
+                    'date' => \Illuminate\Support\Carbon::parse($f->finding_date)->translatedFormat('j M Y'),
+                ];
+            })
+            ->all();
+
+        $stagnantRoadmapItems = [];
+
+        $findingByDate = \App\Models\Finding::query()
+            ->whereIn('finding_date', $workdays)
+            ->whereIn('severity', ['medium', 'high'])
+            ->where('division_id', $selectedDivision)
+            ->selectRaw('finding_date, count(*) as total')
+            ->groupBy('finding_date')
+            ->pluck('total', 'finding_date')
+            ->all();
+
+        $exceptionSeries = collect($workdays)->map(fn ($d) => (int) ($findingByDate[$d] ?? 0))->all();
+
+        $requiredPerDay = max(count($divisionUserIds), 1);
+        $onTimeCounts = \App\Models\DailyEntry::query()
+            ->whereIn('user_id', $divisionUserIds)
+            ->whereIn('entry_date', $workdays)
+            ->whereNotIn('plan_status', ['late', 'missing'])
+            ->whereNotIn('realization_status', ['late', 'missing'])
+            ->selectRaw('entry_date, count(*) as total')
+            ->groupBy('entry_date')
+            ->pluck('total', 'entry_date')
+            ->all();
+
+        $complianceSeries = collect($workdays)
+            ->map(fn ($d) => (int) round(((int) ($onTimeCounts[$d] ?? 0) / $requiredPerDay) * 100))
+            ->all();
+
+        $chartCategories = collect($workdays)
+            ->map(fn ($d) => \Illuminate\Support\Carbon::parse($d)->translatedFormat('j M'))
+            ->all();
     @endphp
 
     <x-ui.page-header title="Divisi" description="Analisis detail per divisi" />
 
     {{-- Division selector + date range --}}
-    <div class="flex flex-wrap gap-3 mb-6">
-        {{-- TODO: wire:model.live="selectedDivision" --}}
-        <select class="input w-48">
-            @foreach($divisions as $div)
-                <option value="{{ $div['id'] }}" {{ $div['id'] === $selectedDivision ? 'selected' : '' }}>{{ $div['name'] }}</option>
-            @endforeach
-        </select>
-        <input type="date" class="input w-40" value="2025-07-01" />
-        <span class="text-muted self-center">—</span>
-        <input type="date" class="input w-40" value="2025-07-07" />
-    </div>
+    <form method="GET" class="flex flex-wrap items-end gap-3 mb-6">
+        <div class="w-48">
+            <label class="label">Divisi</label>
+            <select class="input" name="division">
+                @foreach($divisions as $div)
+                    <option value="{{ $div['id'] }}" {{ $div['id'] === $selectedDivision ? 'selected' : '' }}>{{ $div['name'] }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="w-40">
+            <label class="label">Dari</label>
+            <input type="date" class="input" name="from" value="{{ $periodFrom->toDateString() }}" />
+        </div>
+        <div class="w-40">
+            <label class="label">Sampai</label>
+            <input type="date" class="input" name="to" value="{{ $periodTo->toDateString() }}" />
+        </div>
+        <button type="submit" class="btn-secondary px-4">Terapkan</button>
+    </form>
 
     {{-- Summary cards --}}
     @php $hc = $summaryCards['health_score'] >= 70 ? 'success' : ($summaryCards['health_score'] >= 40 ? 'warning' : 'danger'); @endphp
@@ -65,13 +208,13 @@
         <x-ui.card>
             <h3 class="text-sm font-semibold text-text mb-4">Trend Exception Divisi</h3>
             <div id="chart-div-exception" class="h-[200px] md:h-[280px] flex items-center justify-center bg-app-bg rounded-lg">
-                <p class="text-sm text-muted">📊 Exception Trend</p>
+                <p class="text-sm text-muted">Chart akan muncul di sini</p>
             </div>
         </x-ui.card>
         <x-ui.card class="hidden lg:block">
             <h3 class="text-sm font-semibold text-text mb-4">Compliance Rate</h3>
             <div id="chart-div-compliance" class="h-[280px] flex items-center justify-center bg-app-bg rounded-lg">
-                <p class="text-sm text-muted">📊 Compliance Chart</p>
+                <p class="text-sm text-muted">Chart akan muncul di sini</p>
             </div>
         </x-ui.card>
     </div>
@@ -192,3 +335,50 @@
         </div>
     </div>
 </x-layouts.app>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (!window.ApexCharts) return;
+
+    const categories = @json($chartCategories ?? []);
+    const exceptions = @json($exceptionSeries ?? []);
+    const compliance = @json($complianceSeries ?? []);
+
+    const base = {
+        chart: { toolbar: { show: false }, fontFamily: 'Inter, ui-sans-serif, system-ui' },
+        grid: { borderColor: 'rgba(226,230,234,0.7)' },
+        dataLabels: { enabled: false },
+        legend: { position: 'bottom' },
+    };
+
+    const primary = '#1E3A5F';
+    const success = '#1A7F4B';
+
+    window.__daytaCharts = window.__daytaCharts || {};
+
+    function renderLineChart(elId, color, seriesName, seriesData, yMax) {
+        const el = document.querySelector(elId);
+        if (!el) return;
+
+        if (window.__daytaCharts[elId]) {
+            try { window.__daytaCharts[elId].destroy(); } catch (e) {}
+        }
+
+        el.innerHTML = '';
+        window.__daytaCharts[elId] = new ApexCharts(el, {
+            ...base,
+            chart: { ...base.chart, type: 'line', height: '100%' },
+            colors: [color],
+            stroke: { width: 3, curve: 'smooth' },
+            series: [{ name: seriesName, data: seriesData }],
+            xaxis: { categories, labels: { rotate: -30 } },
+            yaxis: yMax ? { min: 0, max: yMax } : { min: 0, forceNiceScale: true },
+            tooltip: { shared: true },
+        });
+        window.__daytaCharts[elId].render();
+    }
+
+    renderLineChart('#chart-div-exception', primary, 'Exception', exceptions);
+    renderLineChart('#chart-div-compliance', success, 'Compliance %', compliance, 100);
+});
+</script>

@@ -4,42 +4,20 @@
     Component: App\Livewire\Director\AiChatPage
 --}}
 
-<x-layouts.app title="AI Chat">
-    @php
-        $suggestedPrompts = [
-            'Divisi mana yang paling banyak exception minggu ini?',
-            'Siapa saja yang berulang kali missing submission?',
-            'Berikan insight kesehatan Divisi Operasional 7 hari terakhir',
-            'Apa pola umum exception di perusahaan?',
-            'Bandingkan performa semua divisi bulan ini',
-            'Identifikasi roadmap yang terlambat',
-        ];
-        $chatMessages = [
-            ['role' => 'user', 'content' => 'Divisi mana yang paling banyak exception minggu ini?'],
-            ['role' => 'ai', 'content' => 'Berdasarkan data 7 hari terakhir, Divisi Operasional memiliki exception terbanyak dengan 12 temuan.', 'points' => [
-                'Major: 4 (Missing plan, Blocked realization)',
-                'Medium: 5 (Late submission berulang)',
-                'Minor: 3 (Format tidak sesuai)',
-                'Health Score Operasional: 42/100 (Kritis)',
-            ]],
-            ['role' => 'user', 'content' => 'Siapa yang paling sering terlambat mengisi plan?'],
-            ['role' => 'ai', 'content' => 'Berikut top 3 user dengan keterlambatan plan terbanyak minggu ini:', 'points' => [
-                'Budi Santoso (Operasional): 4x late, 2x missing',
-                'Rudi Hermawan (Operasional): 3x late',
-                'Ahmad Fauzi (IT): 2x late, 1x missing',
-            ]],
-        ];
-    @endphp
-
-    <div class="flex flex-col lg:flex-row gap-6 h-[calc(100vh-7rem)]">
+<div class="flex flex-col lg:flex-row gap-6 h-[calc(100vh-7rem)]">
         {{-- Left panel: Suggested prompts (desktop sidebar) --}}
         <aside class="hidden lg:block w-72 shrink-0">
             <x-ui.card class="h-full flex flex-col">
                 <h3 class="text-sm font-semibold text-text mb-4" style="font-family: 'DM Sans', sans-serif;">Saran Pertanyaan</h3>
                 <div class="space-y-2 flex-1 overflow-y-auto">
                     @foreach($suggestedPrompts as $prompt)
-                        {{-- TODO: wire:click="sendPrompt('{{ $prompt }}')" --}}
-                        <button class="w-full text-left px-3 py-2 text-sm text-text rounded-lg border border-border hover:bg-primary-light hover:border-primary/30 hover:text-primary transition-all">
+                        <button
+                            type="button"
+                            wire:click="sendSuggested(@js($prompt))"
+                            wire:target="sendSuggested"
+                            wire:loading.attr="disabled"
+                            class="w-full text-left px-3 py-2 text-sm text-text rounded-lg border border-border hover:bg-primary-light hover:border-primary/30 hover:text-primary transition-all"
+                        >
                             {{ $prompt }}
                         </button>
                     @endforeach
@@ -65,8 +43,14 @@
                 <div class="block lg:hidden px-4 py-2 border-b border-border overflow-x-auto">
                     <div class="flex gap-2 pb-1" style="min-width: max-content;">
                         @foreach(array_slice($suggestedPrompts, 0, 4) as $prompt)
-                            <button class="shrink-0 px-3 py-1.5 text-xs text-primary bg-primary-light border border-primary/20 rounded-full hover:bg-primary/10 transition-colors whitespace-nowrap">
-                                {{ Str::limit($prompt, 40) }}
+                            <button
+                                type="button"
+                                wire:click="sendSuggested(@js($prompt))"
+                                wire:target="sendSuggested"
+                                wire:loading.attr="disabled"
+                                class="shrink-0 px-3 py-1.5 text-xs text-primary bg-primary-light border border-primary/20 rounded-full hover:bg-primary/10 transition-colors whitespace-nowrap"
+                            >
+                                {{ \Illuminate\Support\Str::limit($prompt, 40) }}
                             </button>
                         @endforeach
                     </div>
@@ -92,22 +76,38 @@
                             </div>
                         @endif
                     @endforeach
+
+                    {{-- Typing indicator --}}
+                    <div class="flex justify-start max-w-[85%]" wire:loading wire:target="sendMessage,sendSuggested">
+                        <x-ui.ai-response-block>
+                            <div class="flex items-center gap-2 text-sm text-text">
+                                <span class="text-muted">AI sedang berpikir</span>
+                                <span class="inline-flex gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style="animation-delay: 0ms;"></span>
+                                    <span class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style="animation-delay: 120ms;"></span>
+                                    <span class="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style="animation-delay: 240ms;"></span>
+                                </span>
+                            </div>
+                        </x-ui.ai-response-block>
+                    </div>
                 </div>
 
                 {{-- Input area (sticky bottom) --}}
                 <div class="p-4 border-t border-border bg-surface">
-                    {{-- TODO: wire:submit.prevent="sendMessage" --}}
-                    <form class="flex gap-2">
-                        {{-- TODO: wire:model="messageInput" --}}
+                    <form class="flex gap-2" wire:submit.prevent="sendMessage">
                         <input
                             type="text"
                             class="input flex-1"
                             placeholder="Tanyakan sesuatu tentang data..."
                             autocomplete="off"
+                            wire:model.defer="messageInput"
                         />
-                        {{-- TODO: wire:loading directives --}}
-                        <button type="submit" class="btn-primary shrink-0 px-4">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                        <button type="submit" class="btn-primary shrink-0 px-4" wire:target="sendMessage" wire:loading.attr="disabled">
+                            <svg wire:loading.remove wire:target="sendMessage" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                            <svg wire:loading wire:target="sendMessage" class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
                         </button>
                     </form>
                     <p class="text-xs text-muted mt-2 text-center">Dayta AI menganalisis data reporting. Hasil bersifat pendukung keputusan.</p>
@@ -115,4 +115,4 @@
             </x-ui.card>
         </div>
     </div>
-</x-layouts.app>
+</div>

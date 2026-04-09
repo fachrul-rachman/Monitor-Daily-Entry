@@ -17,11 +17,15 @@ class ReportSetting extends Model
         'realization_close_time',
         'effective_from',
         'is_active',
+        'discord_enabled',
+        'discord_summary_time',
+        'discord_webhook_url',
     ];
 
     protected $casts = [
         'effective_from' => 'date',
         'is_active' => 'boolean',
+        'discord_enabled' => 'boolean',
     ];
 
     public static function current(): self
@@ -36,15 +40,20 @@ class ReportSetting extends Model
             return $setting;
         }
 
-        // Fallback default (should rarely be used once Admin sets it).
-        return new self([
+        // Jika belum ada data sama sekali, buat default agar sistem tidak error.
+        /** @var self $created */
+        $created = static::query()->create([
             'plan_open_time' => '07:00',
             'plan_close_time' => '10:00',
             'realization_open_time' => '15:00',
             'realization_close_time' => '23:00',
-            'effective_from' => Carbon::today(),
+            'effective_from' => Carbon::today()->toDateString(),
             'is_active' => true,
+            'discord_enabled' => false,
+            'discord_summary_time' => '20:00',
+            'discord_webhook_url' => null,
         ]);
+
+        return $created;
     }
 }
-

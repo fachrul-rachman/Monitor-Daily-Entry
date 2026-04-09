@@ -30,14 +30,15 @@ Route::prefix('admin')
     ->name('admin.')
     ->middleware(['auth', 'role:admin'])
     ->group(function () {
-        Route::view('/', 'livewire.admin.home-page')->name('home');
+        Route::get('/', \App\Livewire\Admin\HomePage::class)->name('home');
         Route::get('/users', \App\Livewire\Admin\UsersPage::class)->name('users');
         Route::get('/divisions', \App\Livewire\Admin\DivisionsPage::class)->name('divisions');
         Route::view('/assignments', 'livewire.admin.assignments-page')->name('assignments');
         Route::get('/settings', \App\Livewire\Admin\ReportSettingsPage::class)->name('settings');
-        Route::view('/leave', 'livewire.admin.leave-page')->name('leave');
-        Route::view('/override', 'livewire.admin.override-page')->name('override');
-        Route::view('/notifications', 'livewire.admin.notification-history-page')->name('notifications');
+        Route::get('/security', \App\Livewire\Shared\ChangePasswordPage::class)->name('security');
+        Route::get('/leave', \App\Livewire\Admin\LeavePage::class)->name('leave');
+        Route::get('/override', \App\Livewire\Admin\OverridePage::class)->name('override');
+        Route::get('/notifications', \App\Livewire\Admin\NotificationHistoryPage::class)->name('notifications');
     });
 
 // ============ Director Routes ============
@@ -48,7 +49,18 @@ Route::prefix('director')
         Route::view('/dashboard', 'livewire.director.dashboard-page')->name('dashboard');
         Route::view('/company', 'livewire.director.company-page')->name('company');
         Route::view('/divisions', 'livewire.director.divisions-page')->name('divisions');
-        Route::view('/ai-chat', 'livewire.director.ai-chat-page')->name('ai-chat');
+        Route::get('/security', \App\Livewire\Shared\ChangePasswordPage::class)->name('security');
+        Route::get('/ai-chat', \App\Livewire\Director\AiChatPage::class)->name('ai-chat');
+
+        // Kelola (akses administrasi terbatas untuk Director)
+        Route::prefix('manage')
+            ->name('manage.')
+            ->group(function () {
+                Route::get('/users', \App\Livewire\Admin\UsersPage::class)->name('users');
+                Route::get('/divisions', \App\Livewire\Admin\DivisionsPage::class)->name('divisions');
+                Route::view('/assignments', 'livewire.admin.assignments-page')->name('assignments');
+                Route::get('/leave', \App\Livewire\Admin\LeavePage::class)->name('leave');
+            });
     });
 
 // ============ HoD Routes ============
@@ -58,11 +70,14 @@ Route::prefix('hod')
     ->group(function () {
         Route::view('/dashboard', 'livewire.hod.dashboard-page')->name('dashboard');
         Route::get('/daily-entry', \App\Livewire\Hod\DailyEntryPage::class)->name('daily-entry');
-        Route::view('/history', 'livewire.hod.history-page')->name('history');
-        Route::view('/big-rock', 'livewire.hod.big-rock-page')->name('big-rock');
-        Route::view('/division-entries', 'livewire.hod.division-entries-page')->name('division-entries');
+        Route::get('/history', \App\Livewire\Hod\HistoryPage::class)->name('history');
+        Route::get('/big-rock', \App\Livewire\Shared\BigRockPage::class)->name('big-rock');
+        Route::get('/security', \App\Livewire\Shared\ChangePasswordPage::class)->name('security');
+        Route::get('/leave', \App\Livewire\Admin\LeavePage::class)->name('leave');
+        Route::get('/division-entries', \App\Livewire\Hod\DivisionEntriesPage::class)->name('division-entries');
+        Route::get('/team-big-rock', \App\Livewire\Hod\TeamBigRockPage::class)->name('team-big-rock');
         Route::view('/division-summary', 'livewire.hod.division-summary-page')->name('division-summary');
-        Route::view('/ai-chat', 'livewire.hod.ai-chat-page')->name('ai-chat');
+        Route::get('/ai-chat', \App\Livewire\Hod\AiChatPage::class)->name('ai-chat');
     });
 
 // ============ Manager Routes ============
@@ -72,8 +87,9 @@ Route::prefix('manager')
     ->group(function () {
         Route::view('/dashboard', 'livewire.manager.dashboard-page')->name('dashboard');
         Route::get('/daily-entry', \App\Livewire\Manager\DailyEntryPage::class)->name('daily-entry');
-        Route::view('/history', 'livewire.manager.history-page')->name('history');
-        Route::view('/big-rock', 'livewire.manager.big-rock-page')->name('big-rock');
+        Route::get('/history', \App\Livewire\Manager\HistoryPage::class)->name('history');
+        Route::get('/big-rock', \App\Livewire\Shared\BigRockPage::class)->name('big-rock');
+        Route::get('/security', \App\Livewire\Shared\ChangePasswordPage::class)->name('security');
     });
 
 require __DIR__.'/settings.php';

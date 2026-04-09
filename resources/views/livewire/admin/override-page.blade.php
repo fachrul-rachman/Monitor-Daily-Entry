@@ -1,163 +1,421 @@
-{{--
-    Admin Override Page
-    Route: /admin/override
-    Component: App\Livewire\Admin\OverridePage
---}}
-
-<x-layouts.app title="Override Entry">
-    @php
-        $entries = [
-            ['id' => 1, 'user' => 'Budi Santoso', 'division' => 'Operasional', 'date' => '7 Jul 2025', 'type' => 'Plan', 'title' => 'Review dokumen procurement', 'big_rock' => 'Optimasi Proses', 'status' => 'submitted'],
-            ['id' => 2, 'user' => 'Ahmad Fauzi', 'division' => 'IT', 'date' => '7 Jul 2025', 'type' => 'Realisasi', 'title' => 'Deploy patch server utama', 'big_rock' => 'Stabilitas Sistem', 'status' => 'finished'],
-            ['id' => 3, 'user' => 'Siti Rahayu', 'division' => 'Keuangan', 'date' => '6 Jul 2025', 'type' => 'Plan', 'title' => 'Rekonsiliasi bank bulan Juni', 'big_rock' => 'Akurasi Laporan', 'status' => 'blocked'],
-        ];
-    @endphp
-
-    <x-ui.page-header title="Override Entry" description="Ubah entry plan atau realisasi yang sudah disubmit" />
+<div>
+    <x-ui.page-header
+        title="Override Entry"
+        description="Ubah status laporan plan/realisasi jika ada kondisi khusus. Semua override akan tercatat."
+    />
 
     {{-- Warning banner --}}
-    <div class="bg-danger-bg border border-danger/20 rounded-xl p-4 mb-6 flex items-start gap-3">
-        <svg class="w-5 h-5 text-danger shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
-        <p class="text-sm text-danger font-medium">Perhatian: Semua perubahan override dicatat dalam log audit dan tidak bisa dihapus.</p>
+    <div class="mb-6 bg-danger-bg border border-danger/30 rounded-xl p-4">
+        <p class="text-sm font-semibold text-danger">Perhatian</p>
+        <p class="text-sm text-danger mt-1">
+            Semua perubahan override dicatat dalam log audit dan tidak bisa dihapus. Gunakan hanya untuk kondisi yang benar-benar diperlukan.
+        </p>
     </div>
 
     {{-- Filters --}}
-    <div class="flex flex-wrap gap-3 mb-6">
-        <select class="input w-48"><option value="">Semua User</option><option>Budi Santoso</option><option>Ahmad Fauzi</option><option>Siti Rahayu</option></select>
-        <select class="input w-40"><option value="">Semua Divisi</option><option>Operasional</option><option>IT</option><option>Keuangan</option></select>
-        <input type="date" class="input w-40" />
-        <select class="input w-40"><option value="">Semua Tipe</option><option>Plan</option><option>Realisasi</option></select>
-    </div>
+    <div class="mb-6" x-data="{ filterOpen: false, detailOpen: @entangle('drawerOpen').live }">
+        {{-- Desktop --}}
+        <form class="hidden md:flex gap-3 flex-wrap items-end" wire:submit.prevent="applyFilters">
+            <div class="w-64">
+                <label class="label">User</label>
+                <input
+                    type="text"
+                    class="input"
+                    placeholder="Cari nama/email..."
+                    wire:model.live.debounce.400ms="search"
+                />
+            </div>
 
-    <div x-data="{ overrideOpen: false, selectedEntry: null }">
-        {{-- Entry list --}}
-        <div class="hidden md:block">
-            <div class="overflow-x-auto rounded-xl border border-border">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="bg-app-bg border-b border-border">
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">User</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Divisi</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Tanggal</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Tipe</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Judul</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Status</th>
-                            <th class="text-right px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-border">
-                        @foreach($entries as $entry)
-                            <tr class="hover:bg-app-bg transition-colors">
-                                <td class="px-4 py-3.5 font-medium text-text">{{ $entry['user'] }}</td>
-                                <td class="px-4 py-3.5 text-muted">{{ $entry['division'] }}</td>
-                                <td class="px-4 py-3.5 text-text">{{ $entry['date'] }}</td>
-                                <td class="px-4 py-3.5"><span class="badge-primary">{{ $entry['type'] }}</span></td>
-                                <td class="px-4 py-3.5 text-text">{{ $entry['title'] }}</td>
-                                <td class="px-4 py-3.5"><x-ui.status-badge :status="$entry['status']" /></td>
-                                <td class="px-4 py-3.5 text-right">
-                                    <button
-                                        @click="overrideOpen = true; selectedEntry = {{ json_encode($entry) }}"
-                                        class="text-sm text-primary font-medium hover:underline"
-                                    >Override</button>
-                                </td>
-                            </tr>
+            <div class="w-48">
+                <label class="label">Divisi</label>
+                <select class="input" wire:model.live="division">
+                    <option value="">Semua</option>
+                    @foreach($divisionOptions as $d)
+                        <option value="{{ $d['id'] }}">{{ $d['name'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="w-40">
+                <label class="label">Dari</label>
+                <input type="date" class="input @error('from') input-error @enderror" wire:model.defer="from" />
+                @error('from') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+            </div>
+
+            <div class="w-40">
+                <label class="label">Sampai</label>
+                <input type="date" class="input @error('to') input-error @enderror" wire:model.defer="to" />
+                @error('to') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+            </div>
+
+            <div class="w-44">
+                <label class="label">Tipe</label>
+                <select class="input" wire:model.live="type">
+                    <option value="">Semua</option>
+                    <option value="plan">Plan (yang bermasalah)</option>
+                    <option value="realisasi">Realisasi (yang bermasalah)</option>
+                </select>
+            </div>
+
+            <div class="flex items-center gap-2 pb-1">
+                <button type="submit" class="btn-secondary px-4" wire:target="applyFilters" wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="applyFilters">Terapkan</span>
+                    <span wire:loading wire:target="applyFilters">Memuat...</span>
+                </button>
+                <button type="button" class="text-sm text-muted hover:text-text" wire:click="resetFilters">Reset</button>
+            </div>
+        </form>
+
+        {{-- Mobile --}}
+        <div class="flex gap-2 items-center md:hidden">
+            <div class="flex-1 relative">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <input type="text" placeholder="Cari nama/email..." class="input pl-9" wire:model.live.debounce.400ms="search" />
+            </div>
+            <button type="button" @click="filterOpen = true" class="btn-secondary gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                Filter
+            </button>
+        </div>
+
+        {{-- Mobile bottom sheet --}}
+        <div x-show="filterOpen" class="fixed inset-0 z-40 md:hidden" style="display:none;">
+            <div class="absolute inset-0 bg-black/40" @click="filterOpen = false"></div>
+            <div
+                class="absolute bottom-0 left-0 right-0 bg-surface rounded-t-2xl p-5 space-y-4"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="translate-y-full"
+                x-transition:enter-end="translate-y-0"
+            >
+                <div class="flex items-center justify-between">
+                    <p class="font-semibold text-text">Filter</p>
+                    <button type="button" @click="filterOpen = false" class="text-muted text-lg">×</button>
+                </div>
+
+                <div>
+                    <label class="label">Divisi</label>
+                    <select class="input" wire:model.live="division">
+                        <option value="">Semua</option>
+                        @foreach($divisionOptions as $d)
+                            <option value="{{ $d['id'] }}">{{ $d['name'] }}</option>
                         @endforeach
-                    </tbody>
-                </table>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="label">Dari</label>
+                        <input type="date" class="input @error('from') input-error @enderror" wire:model.defer="from" />
+                        @error('from') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="label">Sampai</label>
+                        <input type="date" class="input @error('to') input-error @enderror" wire:model.defer="to" />
+                        @error('to') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+
+                <div>
+                    <label class="label">Tipe</label>
+                    <select class="input" wire:model.live="type">
+                        <option value="">Semua</option>
+                        <option value="plan">Plan (yang bermasalah)</option>
+                        <option value="realisasi">Realisasi (yang bermasalah)</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-2 pt-2">
+                    <button
+                        type="button"
+                        class="btn-primary flex-1"
+                        @click="filterOpen = false"
+                        wire:click="applyFilters"
+                        wire:target="applyFilters"
+                        wire:loading.attr="disabled"
+                    >
+                        <span wire:loading.remove wire:target="applyFilters">Terapkan</span>
+                        <span wire:loading wire:target="applyFilters">Memuat...</span>
+                    </button>
+                    <button type="button" class="btn-secondary flex-1" wire:click="resetFilters">Reset</button>
+                </div>
             </div>
         </div>
 
-        {{-- Mobile cards --}}
-        <div class="block md:hidden space-y-3">
-            @foreach($entries as $entry)
-                <x-ui.card class="cursor-pointer" @click="overrideOpen = true; selectedEntry = {{ json_encode($entry) }}">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <p class="font-semibold text-text">{{ $entry['user'] }}</p>
-                            <p class="text-xs text-muted">{{ $entry['division'] }} · {{ $entry['date'] }}</p>
+        {{-- Entry list --}}
+        <div class="mt-6 hidden md:block">
+            <x-ui.card class="p-0 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-app-bg text-muted text-xs uppercase tracking-wider">
+                            <tr>
+                                <th class="px-4 py-3 text-left">Tanggal</th>
+                                <th class="px-4 py-3 text-left">User</th>
+                                <th class="px-4 py-3 text-left">Divisi</th>
+                                <th class="px-4 py-3 text-left">Judul Plan</th>
+                                <th class="px-4 py-3 text-left">Big Rock</th>
+                                <th class="px-4 py-3 text-left">Roadmap</th>
+                                <th class="px-4 py-3 text-left">Realisasi</th>
+                                <th class="px-4 py-3 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border">
+                            @forelse($items as $row)
+                                <tr class="hover:bg-app-bg transition-colors">
+                                    <td class="px-4 py-3.5 text-muted whitespace-nowrap">{{ $row['date'] }}</td>
+                                    <td class="px-4 py-3.5 text-text font-medium">{{ $row['user'] }}</td>
+                                    <td class="px-4 py-3.5 text-text">{{ $row['division'] }}</td>
+                                    <td class="px-4 py-3.5 text-text max-w-[260px] truncate">{{ $row['plan_title'] }}</td>
+                                    <td class="px-4 py-3.5 text-text max-w-[220px] truncate">{{ $row['big_rock'] }}</td>
+                                    <td class="px-4 py-3.5 text-text max-w-[220px] truncate">{{ $row['roadmap'] }}</td>
+                                    <td class="px-4 py-3.5"><x-ui.status-badge :status="$row['realization_status']" /></td>
+                                    <td class="px-4 py-3.5 text-right">
+                                        <div class="flex items-center justify-end gap-2">
+                                            <button type="button" class="btn-secondary px-3 py-2" wire:click="openOverride({{ $row['id'] }})">Override</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="px-4 py-10">
+                                        <x-ui.empty-state icon="document" title="Tidak ada entry pada periode ini" description="Coba ubah tanggal atau filter untuk menemukan entry yang perlu dibenahi." />
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </x-ui.card>
+        </div>
+
+        <div class="mt-6 md:hidden space-y-3">
+            @forelse($items as $row)
+                <x-ui.card>
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-text">{{ $row['user'] }}</p>
+                            <p class="text-xs text-muted mt-0.5">{{ $row['division'] }} · {{ $row['date'] }}</p>
                         </div>
-                        <x-ui.status-badge :status="$entry['status']" />
                     </div>
-                    <p class="text-sm text-text mt-2">{{ $entry['title'] }}</p>
-                    <div class="mt-2 flex flex-wrap items-center gap-2">
-                        <span class="badge-primary">{{ $entry['type'] }}</span>
-                        <span class="badge-muted">{{ $entry['big_rock'] }}</span>
+                    <div class="mt-3">
+                        <p class="text-sm text-text font-medium">{{ $row['plan_title'] }}</p>
+                        <p class="text-xs text-muted mt-1">Big Rock: {{ $row['big_rock'] }}</p>
+                        <p class="text-xs text-muted mt-0.5">Roadmap: {{ $row['roadmap'] }}</p>
+                        <div class="mt-2"><x-ui.status-badge :status="$row['realization_status']" /></div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="button" class="btn-secondary w-full" wire:click="openOverride({{ $row['id'] }})">Override</button>
                     </div>
                 </x-ui.card>
-            @endforeach
+            @empty
+                <x-ui.empty-state icon="document" title="Tidak ada entry pada periode ini" description="Coba ubah tanggal atau filter untuk menemukan entry yang perlu dibenahi." />
+            @endforelse
         </div>
 
-        {{-- Override Slide Over Panel --}}
-        <div x-show="overrideOpen" class="fixed inset-0 z-40 flex justify-end" style="display:none;">
-            <div class="absolute inset-0 bg-black/40" @click="overrideOpen = false"></div>
-            <div class="relative w-full max-w-lg bg-surface h-full overflow-y-auto shadow-2xl"
+        <div class="mt-6">
+            <x-ui.pagination :paginator="$entries" />
+        </div>
+
+        {{-- Override panel (drawer) --}}
+        <div x-show="detailOpen" class="fixed inset-0 z-50" style="display:none;">
+            <div class="absolute inset-0 bg-black/40" @click="detailOpen = false; $wire.closeDrawer()"></div>
+
+            <div
+                class="absolute right-0 top-0 bottom-0 w-full md:w-[560px] bg-surface shadow-xl border-l border-border p-5 overflow-y-auto"
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="translate-x-full"
-                x-transition:enter-end="translate-x-0">
-                <div class="p-5 border-b border-border flex items-center justify-between sticky top-0 bg-surface z-10">
-                    <h3 class="font-semibold text-text">Override Entry</h3>
-                    <button @click="overrideOpen = false" class="text-muted hover:text-text">✕</button>
+                x-transition:enter-end="translate-x-0"
+            >
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <p class="text-sm font-semibold text-text">Override Entry</p>
+                        <p class="text-xs text-muted mt-0.5">Nilai lama ditampilkan sebagai referensi. Isi alasan override dengan jelas.</p>
+                    </div>
+                    <button type="button" class="btn-secondary px-3 py-2" @click="detailOpen = false; $wire.closeDrawer()">Tutup</button>
                 </div>
-                <div class="p-5 space-y-5">
-                    {{-- Entry info --}}
-                    <div class="bg-app-bg rounded-xl p-4">
-                        <p class="text-xs text-muted mb-1">Entry yang dipilih</p>
-                        <p class="text-sm font-medium text-text" x-text="selectedEntry?.title"></p>
-                        <p class="text-xs text-muted mt-1" x-text="(selectedEntry?.user || '') + ' · ' + (selectedEntry?.division || '') + ' · ' + (selectedEntry?.date || '')"></p>
+
+                {{-- Selected info --}}
+                <div class="mt-4 bg-app-bg border border-border rounded-xl p-4">
+                    <p class="text-xs text-muted">Entry terpilih</p>
+                    <p class="text-sm font-semibold text-text mt-1">{{ $selected['user'] ?? '-' }}</p>
+                    <p class="text-xs text-muted mt-1">
+                        {{ $selected['division'] ?? '-' }} · {{ $selected['date'] ?? '-' }}
+                        @if(!empty($selected['email']))
+                            · {{ $selected['email'] }}
+                        @endif
+                    </p>
+                </div>
+
+                {{-- Original vs new --}}
+                <div class="mt-5 space-y-4">
+                    <div>
+                        <p class="text-sm font-semibold text-text">Ubah status</p>
+                        <p class="text-xs text-muted mt-0.5">Override ini untuk membetulkan detail plan/realisasi termasuk Big Rock, Roadmap, dan lampiran.</p>
                     </div>
 
-                    {{-- Original vs Edit --}}
-                    <div class="space-y-4">
-                        <h4 class="text-sm font-semibold text-text">Ubah Field</h4>
-
-                        {{-- Title --}}
+                    {{-- Plan --}}
+                    <div class="bg-surface border border-border rounded-xl p-4 space-y-4">
                         <div>
-                            <label class="label">Judul</label>
-                            <div class="bg-app-bg rounded-lg px-3 py-2.5 text-sm text-muted mb-2 border border-border">
-                                <span class="text-xs text-muted block mb-0.5">Original:</span>
-                                <span x-text="selectedEntry?.title"></span>
-                            </div>
-                            {{-- TODO: wire:model="editValues.title" --}}
-                            <input type="text" class="input border-primary" :value="selectedEntry?.title" placeholder="Nilai baru..." />
+                            <p class="text-sm font-semibold text-text">Plan</p>
+                            <p class="text-xs text-muted mt-0.5">Rencana wajib terkait Big Rock milik user yang bersangkutan.</p>
                         </div>
 
-                        {{-- Status --}}
                         <div>
-                            <label class="label">Status</label>
-                            <div class="bg-app-bg rounded-lg px-3 py-2.5 text-sm text-muted mb-2 border border-border">
-                                <span class="text-xs text-muted block mb-0.5">Original:</span>
-                                <span x-text="selectedEntry?.status"></span>
-                            </div>
-                            <select class="input border-primary">
-                                <option value="submitted">Submitted</option>
-                                <option value="finished">Selesai</option>
-                                <option value="in_progress">Sedang Berjalan</option>
+                            <label class="label">Big Rock <span class="text-danger">*</span></label>
+                            <select class="input border-primary" wire:model.live="editBigRockId">
+                                <option value="">Pilih Big Rock...</option>
+                                @foreach($bigRockOptions as $br)
+                                    <option value="{{ $br['id'] }}">{{ $br['title'] }}</option>
+                                @endforeach
+                            </select>
+                            @error('editBigRockId') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="label">Roadmap</label>
+                            <select class="input border-primary" wire:model.live="editRoadmapItemId" @disabled(empty($roadmapOptions))>
+                                <option value="">(Opsional) Pilih Roadmap...</option>
+                                @foreach($roadmapOptions as $rm)
+                                    <option value="{{ $rm['id'] }}">{{ $rm['title'] }}</option>
+                                @endforeach
+                            </select>
+                            @error('editRoadmapItemId') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="label">Judul Plan <span class="text-danger">*</span></label>
+                            <input type="text" class="input border-primary" wire:model.defer="editPlanTitle" placeholder="Judul rencana..." />
+                            @error('editPlanTitle') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="label">Deskripsi Plan</label>
+                            <textarea class="input min-h-[110px]" wire:model.defer="editPlanText" placeholder="Deskripsi rencana..."></textarea>
+                            @error('editPlanText') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="label">Kenapa terkait Big Rock & Roadmap <span class="text-danger">*</span></label>
+                            <textarea class="input min-h-[90px]" wire:model.defer="editPlanRelationReason" placeholder="Jelaskan keterkaitannya..."></textarea>
+                            @error('editPlanRelationReason') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+
+                    {{-- Realisasi --}}
+                    <div class="bg-surface border border-border rounded-xl p-4 space-y-4">
+                        <div>
+                            <p class="text-sm font-semibold text-text">Realisasi</p>
+                            <p class="text-xs text-muted mt-0.5">Realisasi bisa berbeda dari plan (misal ada halangan meeting mendadak).</p>
+                        </div>
+
+                        <div>
+                            <label class="label">Status Realisasi</label>
+                            <select class="input border-primary" wire:model.live="editRealizationStatus">
+                                <option value="draft">Draft</option>
+                                <option value="done">Done</option>
+                                <option value="partial">Partial</option>
+                                <option value="not_done">Not Done</option>
                                 <option value="blocked">Blocked</option>
                             </select>
+                            @error('editRealizationStatus') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
                         </div>
 
-                        {{-- Alasan Override --}}
                         <div>
-                            <label class="label">Alasan Override <span class="text-danger">*</span></label>
-                            {{-- TODO: wire:model="overrideReason" --}}
-                            <textarea class="input min-h-[100px]" placeholder="Jelaskan alasan override ini..." rows="3"></textarea>
+                            <label class="label">Deskripsi Realisasi</label>
+                            <textarea class="input min-h-[110px]" wire:model.defer="editRealizationText" placeholder="Apa yang benar-benar dikerjakan..."></textarea>
+                            @error('editRealizationText') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="label">Alasan (jika tidak Done)</label>
+                            <textarea class="input min-h-[90px]" wire:model.defer="editRealizationReason" placeholder="Alasan jika belum sesuai rencana..."></textarea>
+                            @error('editRealizationReason') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
 
-                    {{-- Actions --}}
-                    <div class="flex gap-3 pt-2" x-data="{ showConfirm: false }">
-                        <button @click="overrideOpen = false" class="btn-secondary flex-1">Batal</button>
-                        <button @click="showConfirm = true" class="btn-primary flex-1">Simpan Override</button>
+                    {{-- Attachment --}}
+                    <div class="bg-surface border border-border rounded-xl p-4 space-y-4">
+                        <div>
+                            <p class="text-sm font-semibold text-text">Lampiran</p>
+                            <p class="text-xs text-muted mt-0.5">Anda bisa menghapus lampiran lama dan menambah lampiran baru. Maksimal 50MB per file.</p>
+                        </div>
 
-                        <x-ui.confirmation-modal
-                            title="Konfirmasi Override"
-                            message="Override ini akan dicatat dalam log. Lanjutkan?"
-                            confirm-label="Ya, Override"
-                            confirm-action="saveOverride"
-                        />
+                        @if(!empty($existingAttachments))
+                            <div class="space-y-2">
+                                <p class="text-xs font-semibold text-muted uppercase">Lampiran saat ini</p>
+                                @foreach($existingAttachments as $att)
+                                    <label class="flex items-center gap-2 text-sm text-text">
+                                        <input
+                                            type="checkbox"
+                                            class="w-4 h-4 rounded accent-primary border-border"
+                                            wire:model="removeAttachmentIds"
+                                            value="{{ $att['id'] }}"
+                                        />
+                                        <span class="truncate">{{ $att['name'] }}</span>
+                                        <span class="text-xs text-muted">(hapus)</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        <div>
+                            <label class="label">Tambah lampiran baru</label>
+                            <input type="file" class="input" wire:model="newAttachments" multiple />
+                            @error('newAttachments.*') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                            <p class="text-xs text-muted mt-2">Tips: kalau gagal upload, kemungkinan batas upload server masih kecil.</p>
+                        </div>
+
+                        <div wire:loading wire:target="newAttachments" class="text-xs text-muted">Mengunggah...</div>
                     </div>
+
+                    <div>
+                        <label class="label">Alasan Override <span class="text-danger">*</span></label>
+                        <textarea class="input min-h-[120px]" placeholder="Jelaskan alasan override ini..." wire:model.defer="overrideReason"></textarea>
+                        @error('overrideReason') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="flex gap-2 pt-2">
+                        <button type="button" class="btn-secondary flex-1" @click="detailOpen = false; $wire.closeDrawer()">Batal</button>
+                        <button
+                            type="button"
+                            class="btn-primary flex-1 flex items-center justify-center gap-2"
+                            wire:click="saveOverride"
+                            wire:loading.attr="disabled"
+                            wire:target="saveOverride"
+                        >
+                            <span wire:loading.remove wire:target="saveOverride">Simpan Override</span>
+                            <span wire:loading wire:target="saveOverride" class="flex items-center gap-2">
+                                <span class="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
+                                <span>Menyimpan...</span>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Audit section --}}
+                <div class="mt-8">
+                    <p class="text-sm font-semibold text-text">Audit</p>
+                    @if(empty($lastAudit))
+                        <p class="text-sm text-muted mt-2">Belum ada override sebelumnya untuk entry ini.</p>
+                    @else
+                        <div class="mt-3 bg-app-bg border border-border rounded-xl p-4">
+                            <p class="text-sm font-medium text-text">Override terakhir</p>
+                            <p class="text-xs text-muted mt-1">{{ $lastAudit['actor'] ?? '-' }} · {{ $lastAudit['time'] ?? '-' }}</p>
+                            <p class="text-sm text-text mt-3 whitespace-pre-wrap">{{ $lastAudit['reason'] ?? '' }}</p>
+                        </div>
+
+                        <div class="mt-3 grid grid-cols-1 gap-3">
+                            <div class="bg-surface border border-border rounded-xl p-4">
+                                <p class="text-xs text-muted uppercase font-semibold">Before</p>
+                                <pre class="mt-2 text-xs text-text bg-app-bg rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">{{ json_encode(($lastAudit['changes']['before'] ?? []), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) }}</pre>
+                            </div>
+                            <div class="bg-surface border border-border rounded-xl p-4">
+                                <p class="text-xs text-muted uppercase font-semibold">After</p>
+                                <pre class="mt-2 text-xs text-text bg-app-bg rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">{{ json_encode(($lastAudit['changes']['after'] ?? []), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) }}</pre>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
-</x-layouts.app>
+</div>

@@ -22,6 +22,8 @@ $map = [
     'blocked'     => ['label' => 'Blocked',           'class' => 'badge-danger'],
     'planned'     => ['label' => 'Planned',           'class' => 'badge-info'],
     'done'        => ['label' => 'Done',              'class' => 'badge-success'],
+    'partial'     => ['label' => 'Sebagian',          'class' => 'badge-warning'],
+    'not_done'    => ['label' => 'Tidak Selesai',     'class' => 'badge-danger'],
     'sent'        => ['label' => 'Terkirim',          'class' => 'badge-success'],
     'failed'      => ['label' => 'Gagal',             'class' => 'badge-danger'],
     'on_track'    => ['label' => 'On Track',          'class' => 'badge-success'],

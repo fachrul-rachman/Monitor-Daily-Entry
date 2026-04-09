@@ -19,3 +19,22 @@ Artisan::command('dayta:compute-metrics {--from=} {--to=}', function () {
 
     $this->info('OK: metrics computed.');
 })->purpose('Compute findings and health scores for a date range');
+
+Artisan::command('dayta:send-discord-daily-summary {--date=}', function () {
+    $dateOpt = $this->option('date');
+
+    try {
+        if ($dateOpt) {
+            $date = Carbon::parse($dateOpt);
+            app(\App\Services\DiscordDailySummaryService::class)->sendForDate($date);
+            $this->info('OK: discord daily summary sent for '.$date->toDateString().'.');
+
+            return;
+        }
+
+        app(\App\Services\DiscordDailySummaryService::class)->sendIfDue(Carbon::now());
+        $this->info('OK: discord daily summary checked.');
+    } catch (\Throwable $e) {
+        $this->error('FAILED: '.$e->getMessage());
+    }
+})->purpose('Send Discord daily findings summary (medium/high) for Director');
