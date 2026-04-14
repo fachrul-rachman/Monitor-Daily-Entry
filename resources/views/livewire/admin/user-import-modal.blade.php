@@ -41,7 +41,11 @@
             </div>
 
             {{-- Upload area --}}
-            <div class="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/40 transition-colors">
+            <div
+                class="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/40 transition-colors"
+                @dragover.prevent
+                @drop.prevent
+            >
                 <svg class="w-10 h-10 text-muted mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                 <p class="text-sm text-text font-medium">Drag & drop file di sini</p>
                 <p class="text-xs text-muted mt-1">atau</p>
@@ -56,6 +60,13 @@
                     >
                 </label>
                 <p class="text-xs text-muted mt-2">Format: .xlsx, .xls, .csv</p>
+                @if($file)
+                    <p class="text-xs text-success mt-2">
+                        File dipilih: <span class="font-medium">{{ $file->getClientOriginalName() }}</span>
+                    </p>
+                @else
+                    <p class="text-xs text-muted mt-2">Belum ada file yang dipilih.</p>
+                @endif
                 @error('file') <p class="text-xs text-danger mt-2">{{ $message }}</p> @enderror
             </div>
 

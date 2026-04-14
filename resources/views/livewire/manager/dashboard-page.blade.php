@@ -29,7 +29,7 @@
             ->first();
 
         $planItemsToday = 0;
-        $realizedItemsToday = 0;
+        $pendingRealization = 0;
 
         if ($todayEntry) {
             $planItemsToday = \App\Models\DailyEntryItem::query()
@@ -37,16 +37,20 @@
                 ->whereNotNull('plan_title')
                 ->count();
 
-            $realizedItemsToday = \App\Models\DailyEntryItem::query()
+            // Pending = item yang sudah punya plan, tapi realisasi masih draft/belum ada.
+            $pendingRealization = \App\Models\DailyEntryItem::query()
                 ->where('daily_entry_id', $todayEntry->id)
                 ->whereNotNull('plan_title')
-                ->whereNotNull('realization_status')
+                ->where(function ($q) {
+                    $q->whereNull('realization_status')
+                        ->orWhere('realization_status', 'draft');
+                })
                 ->count();
         }
 
-        $pendingRealization = max($planItemsToday - $realizedItemsToday, 0);
-        $planFilled = $planItemsToday > 0;
-        $realizationFilled = $planFilled && $pendingRealization === 0;
+        // Status banner mengikuti "status pelaporan" (daily_entries), bukan status draft di item.
+        $planFilled = (bool) ($todayEntry && in_array($todayEntry->plan_status, ['submitted', 'late'], true));
+        $realizationFilled = (bool) ($todayEntry && in_array($todayEntry->realization_status, ['submitted', 'late'], true));
 
         $activeBigRockCount = \App\Models\BigRock::query()
             ->where('user_id', $user->id)
@@ -93,7 +97,7 @@
         $recentHistory = $recentEntries->map(function ($e) use ($itemsByEntry) {
             $items = $itemsByEntry[$e->id] ?? collect();
             $planCount = $items->whereNotNull('plan_title')->count();
-            $realCount = $items->whereNotNull('plan_title')->whereNotNull('realization_status')->count();
+            $realCount = $items->whereNotNull('plan_title')->where('realization_status', '!=', 'draft')->whereNotNull('realization_status')->count();
             $title = $items->first()?->plan_title ?? '—';
 
             $planStatus = $planCount === 0 ? 'missing' : ($e->plan_status ?: 'submitted');

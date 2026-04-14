@@ -17,14 +17,14 @@
     </div>
 
     @if($response)
-        <p class="text-sm text-text leading-relaxed">{{ $response }}</p>
+        <div class="text-sm text-text leading-relaxed whitespace-pre-line">{{ $response }}</div>
     @endif
 
     @if(count($points) > 0)
         <ul class="mt-3 space-y-1">
             @foreach($points as $point)
                 <li class="flex items-start gap-2 text-sm text-text">
-                    <span class="text-primary mt-0.5">→</span>
+                    <span class="text-primary mt-0.5">&rarr;</span>
                     {{ $point }}
                 </li>
             @endforeach

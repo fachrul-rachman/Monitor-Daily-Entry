@@ -33,7 +33,7 @@ Route::prefix('admin')
         Route::get('/', \App\Livewire\Admin\HomePage::class)->name('home');
         Route::get('/users', \App\Livewire\Admin\UsersPage::class)->name('users');
         Route::get('/divisions', \App\Livewire\Admin\DivisionsPage::class)->name('divisions');
-        Route::view('/assignments', 'livewire.admin.assignments-page')->name('assignments');
+        Route::get('/assignments', \App\Livewire\Admin\AssignmentsPage::class)->name('assignments');
         Route::get('/settings', \App\Livewire\Admin\ReportSettingsPage::class)->name('settings');
         Route::get('/security', \App\Livewire\Shared\ChangePasswordPage::class)->name('security');
         Route::get('/leave', \App\Livewire\Admin\LeavePage::class)->name('leave');
@@ -58,7 +58,7 @@ Route::prefix('director')
             ->group(function () {
                 Route::get('/users', \App\Livewire\Admin\UsersPage::class)->name('users');
                 Route::get('/divisions', \App\Livewire\Admin\DivisionsPage::class)->name('divisions');
-                Route::view('/assignments', 'livewire.admin.assignments-page')->name('assignments');
+                Route::get('/assignments', \App\Livewire\Admin\AssignmentsPage::class)->name('assignments');
                 Route::get('/leave', \App\Livewire\Admin\LeavePage::class)->name('leave');
             });
     });

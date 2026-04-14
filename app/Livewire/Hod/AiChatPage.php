@@ -73,30 +73,11 @@ class AiChatPage extends Component
                 context: $context,
             );
 
-            $decoded = json_decode($raw, true);
-            if (! is_array($decoded)) {
-                $rawJson = $this->extractJsonObject($raw);
-                if ($rawJson) {
-                    $decoded = json_decode($rawJson, true);
-                }
-            }
-
-            if (is_array($decoded) && isset($decoded['answer_id'], $decoded['answer_en'])) {
-                $points = [];
-                if (! empty($decoded['bullets']) && is_array($decoded['bullets'])) {
-                    $points = array_values(array_filter(array_map('strval', $decoded['bullets'])));
-                }
-
-                $content = trim((string) $decoded['answer_id']);
-                $en = trim((string) $decoded['answer_en']);
-                if ($en !== '') {
-                    $content .= "\n\nEN: ".$en;
-                }
-
+            $payload = $this->decodeAiPayload($raw);
+            if ($payload) {
                 $this->messages[] = [
                     'role' => 'ai',
-                    'content' => $content,
-                    'points' => $points,
+                    'content' => $this->formatAiPayload($payload),
                 ];
 
                 return;
@@ -107,31 +88,44 @@ class AiChatPage extends Component
 
         $this->messages[] = [
             'role' => 'ai',
-            'content' => 'Maaf, AI sedang bermasalah. Coba lagi beberapa saat, atau cek API key/model yang dipasang.',
-            'points' => [
-                'Kalau ini terjadi terus, berarti koneksi ke AI belum siap.',
-            ],
+            'content' => implode("\n", [
+                'AI belum bisa memproses pertanyaan ini.',
+                '',
+                'Jawaban inti:',
+                '- Silakan coba lagi beberapa saat.',
+                '- Jika sering terjadi, minta admin memastikan konfigurasi AI sudah aktif.',
+                '',
+                'Catatan data: Berdasarkan data sistem yang tersedia saat ini.',
+            ]),
         ];
     }
 
     protected function buildSystemMessage(): string
     {
         return <<<SYS
-You are "Dayta AI", an operational assistant for a Head of Division (HoD).
+Anda adalah "Dayta AI", asisten analisis untuk Head of Division (HoD).
 
-Rules:
-- You ONLY analyze the HoD's division scope provided in the context.
-- Be concise and action-oriented (coaching / follow-up ready).
-- Output bilingual: Indonesian + English.
-- Keep it short: maximum 6 bullets when relevant.
-- If the data is insufficient, say so briefly and ask up to 1 clarification question.
+Aturan:
+- Anda HANYA menganalisis scope divisi HoD yang ada di "Context snapshot (JSON)".
+- Menjawab dengan gaya bisnis (ringkas, coaching/follow-up ready).
+- Bahasa Indonesia saja.
+- Fokus pada data yang ada. Jangan mengarang detail yang tidak ada.
+- Jika data belum cukup untuk menjawab tepat, katakan dengan jelas di "core_answer" dan sarankan 1 langkah tindak lanjut.
 
-Output format MUST be valid JSON only (no markdown, no extra text):
+Format keluaran WAJIB JSON valid saja (tanpa markdown, tanpa teks tambahan), dengan struktur:
 {
-  "answer_id": "string",
-  "answer_en": "string",
-  "bullets": ["string", "..."]
+  "title": "Judul singkat sesuai pertanyaan",
+  "core_answer": "Jawaban inti 1–2 kalimat, langsung menjawab",
+  "reasons": ["Alasan singkat berbasis data", "..."],
+  "follow_up": ["Nama Manager — isu — tindakan yang diminta", "..."],
+  "next_actions": ["Aksi yang disarankan", "..."],
+  "data_note": "1 baris catatan data (rentang tanggal + sumber: data sistem)"
 }
+
+Aturan penting:
+- Jangan tampilkan kode internal / label seperti 'missing_report_...'.
+- Ikuti permintaan user (mis. jika user minta top 1, berikan top 1 saja).
+- Total bullet gabungan (reasons+follow_up+next_actions) maksimal 8 item.
 SYS;
     }
 
@@ -184,6 +178,92 @@ SYS;
         }
 
         return null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    protected function decodeAiPayload(string $raw): ?array
+    {
+        $decoded = json_decode($raw, true);
+        if (! is_array($decoded)) {
+            $rawJson = $this->extractJsonObject($raw);
+            if ($rawJson) {
+                $decoded = json_decode($rawJson, true);
+            }
+        }
+
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        $title = trim((string) ($decoded['title'] ?? ''));
+        $core = trim((string) ($decoded['core_answer'] ?? ''));
+        $dataNote = trim((string) ($decoded['data_note'] ?? ''));
+
+        if ($title === '' || $core === '' || $dataNote === '') {
+            return null;
+        }
+
+        $decoded['reasons'] = is_array($decoded['reasons'] ?? null) ? array_values(array_map('strval', $decoded['reasons'])) : [];
+        $decoded['follow_up'] = is_array($decoded['follow_up'] ?? null) ? array_values(array_map('strval', $decoded['follow_up'])) : [];
+        $decoded['next_actions'] = is_array($decoded['next_actions'] ?? null) ? array_values(array_map('strval', $decoded['next_actions'])) : [];
+
+        return $decoded;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    protected function formatAiPayload(array $payload): string
+    {
+        $title = trim((string) ($payload['title'] ?? ''));
+        $core = trim((string) ($payload['core_answer'] ?? ''));
+        $reasons = array_values(array_filter(array_map('trim', (array) ($payload['reasons'] ?? []))));
+        $followUp = array_values(array_filter(array_map('trim', (array) ($payload['follow_up'] ?? []))));
+        $actions = array_values(array_filter(array_map('trim', (array) ($payload['next_actions'] ?? []))));
+        $dataNote = trim((string) ($payload['data_note'] ?? ''));
+
+        $lines = [];
+        if ($title !== '') {
+            $lines[] = $title;
+        }
+
+        if ($core !== '') {
+            $lines[] = '';
+            $lines[] = $core;
+        }
+
+        if (! empty($reasons)) {
+            $lines[] = '';
+            $lines[] = 'Alasan singkat:';
+            foreach ($reasons as $r) {
+                $lines[] = '- '.$r;
+            }
+        }
+
+        if (! empty($followUp)) {
+            $lines[] = '';
+            $lines[] = 'Manager yang perlu follow-up:';
+            foreach ($followUp as $f) {
+                $lines[] = '- '.$f;
+            }
+        }
+
+        if (! empty($actions)) {
+            $lines[] = '';
+            $lines[] = 'Tindak lanjut:';
+            foreach ($actions as $a) {
+                $lines[] = '- '.$a;
+            }
+        }
+
+        if ($dataNote !== '') {
+            $lines[] = '';
+            $lines[] = 'Catatan data: '.$dataNote;
+        }
+
+        return implode("\n", $lines);
     }
 
     /**
@@ -283,25 +363,56 @@ SYS;
             ->selectRaw("sum(case when severity='low' then 1 else 0 end) as low_count")
             ->first();
 
-        $topUsers = Finding::query()
+        $topMissing = Finding::query()
             ->whereBetween('finding_date', [$from, $to])
             ->whereIn('division_id', $divisionIds ?: [-1])
-            ->whereIn('severity', ['medium', 'high'])
-            ->whereNotNull('user_id')
+            ->where('type', 'missing_daily')
+            ->whereIn('user_id', $managerIds ?: [-1])
             ->selectRaw('user_id, count(*) as total')
             ->groupBy('user_id')
             ->orderByDesc('total')
             ->limit(5)
             ->get();
 
+        $topRisk = Finding::query()
+            ->whereBetween('finding_date', [$from, $to])
+            ->whereIn('division_id', $divisionIds ?: [-1])
+            ->whereIn('severity', ['medium', 'high'])
+            ->whereIn('user_id', $managerIds ?: [-1])
+            ->selectRaw("user_id,
+                sum(case when severity='high' then 1 else 0 end) as high_count,
+                sum(case when severity='medium' then 1 else 0 end) as medium_count,
+                count(*) as total")
+            ->groupBy('user_id')
+            ->orderByDesc('high_count')
+            ->orderByDesc('medium_count')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get();
+
+        $userIds = collect([$topMissing->pluck('user_id'), $topRisk->pluck('user_id')])
+            ->flatten()
+            ->filter()
+            ->map(fn ($v) => (int) $v)
+            ->unique()
+            ->values()
+            ->all();
+
         $userNames = User::query()
-            ->whereIn('id', $topUsers->pluck('user_id')->all())
+            ->whereIn('id', $userIds ?: [-1])
             ->pluck('name', 'id')
             ->all();
 
-        $topUserPayload = $topUsers->map(fn ($r) => [
-            'user' => $userNames[$r->user_id] ?? '—',
-            'medium_high_findings' => (int) $r->total,
+        $topMissingManagers = $topMissing->map(fn ($r) => [
+            'manager' => $userNames[$r->user_id] ?? '—',
+            'missing_days' => (int) $r->total,
+        ])->all();
+
+        $topRiskManagers = $topRisk->map(fn ($r) => [
+            'manager' => $userNames[$r->user_id] ?? '—',
+            'high' => (int) ($r->high_count ?? 0),
+            'medium' => (int) ($r->medium_count ?? 0),
+            'medium_high_total' => (int) ($r->total ?? 0),
         ])->all();
 
         return [
@@ -322,10 +433,11 @@ SYS;
                 'medium' => (int) ($findings7d?->medium_count ?? 0),
                 'low' => (int) ($findings7d?->low_count ?? 0),
             ],
-            'top_users_by_medium_high_findings_7d' => $topUserPayload,
+            'top_managers_by_missing_daily_7d' => $topMissingManagers,
+            'top_managers_by_medium_high_findings_7d' => $topRiskManagers,
             'notes' => [
-                'Findings are system-generated. Manual editing by HoD is not allowed (MVP rule).',
-                'Workdays are Monday–Friday (weekends excluded).',
+                'Data bersumber dari sistem (daily entry + findings + health score).',
+                'Scope dibatasi pada divisi HoD.',
             ],
         ];
     }
@@ -340,4 +452,3 @@ SYS;
         ]);
     }
 }
-

@@ -84,20 +84,32 @@
             ->limit(6)
             ->get(['id', 'title'])
             ->map(function ($br) use ($periodFrom, $periodTo) {
-                $roadmapCount = \App\Models\RoadmapItem::query()->where('big_rock_id', $br->id)->count();
-                $worked = \App\Models\DailyEntryItem::query()
-                    ->whereNotNull('roadmap_item_id')
+                // Samakan definisi progress dengan halaman Big Rock:
+                // progress dihitung dari status RoadmapItem (planned/in_progress/blocked/finished).
+                $weights = [
+                    'planned' => 0.0,
+                    'in_progress' => 0.6,
+                    'blocked' => 0.3,
+                    'finished' => 1.0,
+                    'completed' => 1.0,
+                    'done' => 1.0,
+                ];
+
+                $roadmapStatuses = \App\Models\RoadmapItem::query()
                     ->where('big_rock_id', $br->id)
-                    ->whereIn('realization_status', ['done', 'partial'])
-                    ->whereHas('entry', function ($q) use ($periodFrom, $periodTo) {
-                        $q->whereBetween('entry_date', [$periodFrom->toDateString(), $periodTo->toDateString()]);
-                    })
-                    ->distinct('roadmap_item_id')
-                    ->count('roadmap_item_id');
+                    ->where('status', '!=', 'archived')
+                    ->pluck('status');
 
-                $progress = $roadmapCount > 0 ? (int) round(($worked / $roadmapCount) * 100) : 0;
+                $roadmapCount = $roadmapStatuses->count();
+                $score = $roadmapStatuses->map(fn ($s) => (float) ($weights[$s] ?? 0.0))->sum();
+                $progress = $roadmapCount > 0 ? (int) round(($score / $roadmapCount) * 100) : 0;
 
-                $status = $progress >= 70 ? 'on_track' : ($progress >= 40 ? 'at_risk' : 'blocked');
+                // UX: kalau semua masih planned / belum ada score sama sekali.
+                if ($roadmapCount === 0 || $score <= 0.0) {
+                    $status = 'not_started';
+                } else {
+                    $status = $progress >= 70 ? 'on_track' : ($progress >= 40 ? 'at_risk' : 'blocked');
+                }
 
                 return [
                     'title' => $br->title,

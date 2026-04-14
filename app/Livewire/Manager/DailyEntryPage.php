@@ -235,47 +235,51 @@ class DailyEntryPage extends Component
 
     public function startCreatePlan(): void
     {
-        if ($this->planWindowBefore) {
-            return;
-        }
-
-        $this->planFormOpen = true;
-        $this->openPlanCard = 'new';
-
-        // Jika ada isi yang sudah diinput, coba simpan dulu
-        if ($this->bigRockId || $this->planTitle || $this->planRelationReason) {
-            // Jika tidak lolos validasi, savePlan akan memunculkan error
-            // dan baris di bawah tidak akan dijalankan, sehingga isi form tidak hilang.
-            $this->savePlan();
-        }
-
         $this->editingItemId = null;
         $this->planTitle = '';
         $this->planText = '';
         $this->planRelationReason = '';
         $this->bigRockId = null;
         $this->roadmapItemId = null;
-        $this->loadRoadmapItems();
+
+        $this->planFormOpen = true;
+        $this->openPlanCard = 'new';
     }
 
     public function startEditPlan(int $itemId): void
     {
-        $item = DailyEntryItem::find($itemId);
+        $user = auth()->user();
+        $today = Carbon::today()->toDateString();
+
+        $entry = DailyEntry::query()
+            ->where('user_id', $user->id)
+            ->whereDate('entry_date', $today)
+            ->first();
+
+        if (! $entry) {
+            return;
+        }
+
+        $item = DailyEntryItem::query()
+            ->where('id', $itemId)
+            ->where('daily_entry_id', $entry->id)
+            ->first();
 
         if (! $item) {
             return;
         }
 
-        $this->planFormOpen = true;
-        $this->openPlanCard = (string) $itemId;
+        $this->editingItemId = (int) $item->id;
+        $this->planTitle = (string) ($item->plan_title ?? '');
+        $this->planText = (string) ($item->plan_text ?? '');
+        $this->planRelationReason = (string) ($item->plan_relation_reason ?? '');
+        $this->bigRockId = $item->big_rock_id ? (int) $item->big_rock_id : null;
+        $this->roadmapItemId = $item->roadmap_item_id ? (int) $item->roadmap_item_id : null;
 
-        $this->editingItemId = $item->id;
-        $this->bigRockId = $item->big_rock_id;
+        $this->planFormOpen = true;
+        $this->openPlanCard = (string) $this->editingItemId;
+
         $this->loadRoadmapItems();
-        $this->roadmapItemId = $item->roadmap_item_id;
-        $this->planTitle = $item->plan_title;
-        $this->planText = $item->plan_text ?? '';
-        $this->planRelationReason = $item->plan_relation_reason ?? '';
     }
 
     public function closePlanForm(): void
@@ -283,45 +287,24 @@ class DailyEntryPage extends Component
         $this->planFormOpen = false;
         $this->openPlanCard = '';
         $this->editingItemId = null;
-        $this->planTitle = '';
-        $this->planText = '';
-        $this->planRelationReason = '';
-        $this->bigRockId = null;
-        $this->roadmapItemId = null;
-        $this->loadRoadmapItems();
     }
 
     public function startRealization(): void
     {
-        if ($this->realizationWindowBefore) {
-            return;
-        }
-
-        if (empty($this->items)) {
-            // UX: jangan terasa "tombol rusak" — arahkan user ke Plan.
-            $this->realizationNotice = 'Belum ada rencana hari ini. Isi rencana dulu di tab Plan, lalu kembali ke Realisasi.';
-            $this->activeTab = 'plan';
-
-            return;
-        }
-
         $this->realizationFormOpen = true;
         $this->realizationNotice = null;
 
-        if (! $this->selectedItemId && ! empty($this->items)) {
+        // Set default selection if any items exist.
+        if (! empty($this->items) && ! $this->selectedItemId) {
             $this->selectedItemId = $this->items[0]['id'];
-            $this->loadRealizationFromSelectedItem();
         }
+
+        $this->loadRealizationFromSelectedItem();
     }
 
     public function selectRealizationItem($value): void
     {
-        if ($this->realizationWindowBefore) {
-            return;
-        }
-
-        $this->selectedItemId = $value ? (int) $value : null;
-        $this->realizationFormOpen = true;
+        $this->selectedItemId = $value !== '' ? (int) $value : null;
         $this->loadRealizationFromSelectedItem();
     }
 
@@ -332,41 +315,65 @@ class DailyEntryPage extends Component
 
     protected function loadRealizationFromSelectedItem(): void
     {
-        if (! $this->selectedItemId) {
-            $this->realizationStatus = 'done';
-            $this->realizationText = '';
-            $this->realizationReason = '';
-            $this->currentAttachmentPath = null;
-            $this->existingAttachments = [];
+        $this->realizationStatus = 'done';
+        $this->realizationText = '';
+        $this->realizationReason = '';
+        $this->realizationNotice = null;
+        $this->currentAttachmentPath = null;
+        $this->existingAttachments = [];
 
+        if (! $this->selectedItemId) {
             return;
         }
 
-        $item = DailyEntryItem::find($this->selectedItemId);
+        $user = auth()->user();
+        $today = Carbon::today()->toDateString();
+
+        $entry = DailyEntry::query()
+            ->where('user_id', $user->id)
+            ->whereDate('entry_date', $today)
+            ->first();
+
+        if (! $entry) {
+            return;
+        }
+
+        $item = DailyEntryItem::query()
+            ->where('id', $this->selectedItemId)
+            ->where('daily_entry_id', $entry->id)
+            ->first();
 
         if (! $item) {
             return;
         }
 
-        $this->realizationStatus = $item->realization_status !== 'draft'
-            ? $item->realization_status
-            : 'done';
-        $this->realizationText = $item->realization_text ?? '';
-        $this->realizationReason = $item->realization_reason ?? '';
+        $this->realizationStatus = $item->realization_status ?: 'done';
+        $this->realizationText = $item->realization_text ?: '';
+        $this->realizationReason = $item->realization_reason ?: '';
         $this->currentAttachmentPath = $item->realization_attachment_path;
-        $this->existingAttachments = $item->attachments()
+
+        $attachments = DailyEntryItemAttachment::query()
+            ->where('daily_entry_item_id', $item->id)
             ->orderBy('id')
-            ->get(['id', 'original_name', 'path'])
-            ->map(fn ($a) => ['id' => $a->id, 'name' => $a->original_name ?: basename($a->path)])
+            ->get(['id', 'original_name', 'path', 'mime_type', 'size_bytes']);
+
+        $this->existingAttachments = $attachments
+            ->map(fn (DailyEntryItemAttachment $a) => [
+                'id' => (int) $a->id,
+                'name' => $a->original_name ?: 'file',
+                'path' => $a->path,
+            ])
             ->all();
     }
 
     public function savePlan(): void
     {
-        $this->validate([
+        $data = $this->validate([
             'planTitle' => 'required|string|max:255',
-            'bigRockId' => 'required|integer|exists:big_rocks,id',
+            'planText' => 'nullable|string',
             'planRelationReason' => 'required|string',
+            'bigRockId' => 'required|integer',
+            'roadmapItemId' => 'nullable|integer',
         ]);
 
         $user = auth()->user();
@@ -388,11 +395,11 @@ class DailyEntryPage extends Component
         );
 
         $itemData = [
-            'big_rock_id' => $this->bigRockId,
-            'roadmap_item_id' => $this->roadmapItemId,
-            'plan_title' => $this->planTitle,
-            'plan_text' => $this->planText,
-            'plan_relation_reason' => $this->planRelationReason,
+            'big_rock_id' => $data['bigRockId'],
+            'roadmap_item_id' => $data['roadmapItemId'],
+            'plan_title' => $data['planTitle'],
+            'plan_text' => $data['planText'],
+            'plan_relation_reason' => $data['planRelationReason'],
         ];
 
         if ($this->editingItemId && $now->gt($planClose)) {
@@ -424,7 +431,6 @@ class DailyEntryPage extends Component
         $this->loadItems($entry);
         $this->computeWindowStates($now, $setting);
 
-        // Setelah tersimpan, tetap biarkan card form terbuka agar user bisa lanjut edit jika perlu.
         $this->planFormOpen = true;
         $this->openPlanCard = $this->editingItemId ? (string) $this->editingItemId : ($this->openPlanCard ?: 'new');
     }
@@ -503,10 +509,7 @@ class DailyEntryPage extends Component
 
         $this->realizationAttachments = [];
 
-        $entry->realization_status = $this->realizationStatus;
         $entry->realization_submitted_at = $now;
-        $entry->save();
-
         // daily_entries.realization_status = status pelaporan (submitted/late/missing), bukan status pekerjaan item.
         $entry->realization_status = $now->gt($realClose) ? 'late' : 'submitted';
         $entry->save();
@@ -519,7 +522,6 @@ class DailyEntryPage extends Component
 
     public function render()
     {
-        // Pastikan roadmap selalu ke-refresh saat component re-render.
         $this->loadRoadmapItems();
 
         return view('livewire.manager.daily-entry-page')
