@@ -21,3 +21,5 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+# Added by code-review-graph
+.code-review-graph/
