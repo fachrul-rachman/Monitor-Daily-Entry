@@ -12,6 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withSchedule(function (Schedule $schedule): void {
+        // Sinkron tanggal merah (Public Holiday saja; joint holiday tetap dihitung sebagai hari kerja).
+        // Disarankan jalan dini hari agar metrics harian akurat.
+        $schedule->command('dayta:sync-holidays '.now()->format('Y'))->dailyAt('00:10');
+
         // Metrics (findings + health score) untuk chart Director/HoD.
         // MVP: hitung ulang 14 hari terakhir secara idempotent (aman dijalankan berulang).
         $schedule->command('dayta:compute-metrics --from='.now()->subDays(14)->toDateString().' --to='.now()->toDateString())

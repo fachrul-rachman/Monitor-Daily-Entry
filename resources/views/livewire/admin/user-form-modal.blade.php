@@ -31,15 +31,15 @@
             {{-- Name --}}
             <div>
                 <label class="label">Nama Lengkap <span class="text-danger">*</span></label>
-                <input type="text" class="input" placeholder="Nama lengkap user" wire:model.defer="name" />
-                @error('name') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                <input type="text" class="input" placeholder="Nama lengkap user" wire:model.live="name" />
+                @error('name') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
             </div>
 
             {{-- Email --}}
             <div>
                 <label class="label">Email <span class="text-danger">*</span></label>
-                <input type="email" class="input" placeholder="email@perusahaan.com" wire:model.defer="email" />
-                @error('email') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                <input type="email" class="input" placeholder="email@perusahaan.com" wire:model.live="email" />
+                @error('email') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
             </div>
 
             {{-- Role --}}
@@ -51,20 +51,20 @@
                         <option value="{{ $key }}">{{ $label }}</option>
                     @endforeach
                 </select>
-                @error('role') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                @error('role') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
             </div>
 
             {{-- Division --}}
             <div>
                 <label class="label">Divisi</label>
-                <select class="input" wire:model.defer="division">
+                <select class="input" wire:model.live="division">
                     <option value="">Pilih divisi...</option>
                     @foreach($availableDivisions as $div)
                         <option value="{{ $div }}">{{ $div }}</option>
                     @endforeach
                 </select>
-                <p class="text-xs text-muted mt-1">Divisi yang tersedia bergantung pada role yang dipilih</p>
-                @error('division') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                <p class="text-sm text-muted mt-1">Divisi yang tersedia bergantung pada role yang dipilih</p>
+                @error('division') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
             </div>
 
             {{-- Password --}}
@@ -79,12 +79,12 @@
                     type="password"
                     class="input"
                     placeholder="{{ $isEdit ? 'Kosongkan jika tidak diubah' : 'Minimal 8 karakter' }}"
-                    wire:model.defer="password"
+                    wire:model.live="password"
                 />
                 @if($isEdit)
-                    <p class="text-xs text-muted mt-1">Kosongkan jika tidak ingin mengubah password</p>
+                    <p class="text-sm text-muted mt-1">Kosongkan jika tidak ingin mengubah password</p>
                 @endif
-                @error('password') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                @error('password') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
             </div>
 
             {{-- Active toggle --}}

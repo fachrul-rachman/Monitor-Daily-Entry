@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\DailyEntry;
 use App\Models\Finding;
+use App\Models\Holiday;
 use App\Models\HealthScore;
 use App\Models\ReportSetting;
 use App\Models\RoadmapItem;
@@ -75,11 +76,23 @@ class MetricsService
 
     private function workdaysBetween(Carbon $from, Carbon $to): array
     {
+        $holidayDates = Holiday::query()
+            ->whereBetween('holiday_date', [$from->toDateString(), $to->toDateString()])
+            ->where('is_holiday', true)
+            ->where('is_joint_holiday', false)
+            ->pluck('holiday_date')
+            ->map(fn ($d) => Carbon::parse($d)->toDateString())
+            ->all();
+        $holidaySet = array_fill_keys($holidayDates, true);
+
         $days = [];
         $cursor = $from->copy()->startOfDay();
         while ($cursor->lte($to)) {
             if (! $cursor->isWeekend()) {
-                $days[] = $cursor->copy();
+                $key = $cursor->toDateString();
+                if (! isset($holidaySet[$key])) {
+                    $days[] = $cursor->copy();
+                }
             }
             $cursor->addDay();
         }

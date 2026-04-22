@@ -230,11 +230,11 @@
                         @click="drawerOpen = true; selectedFinding = { title: '{{ $person['name'] }}', type: 'person' }">
                         <div>
                             <p class="text-sm font-medium text-text">{{ $person['name'] }}</p>
-                            <p class="text-xs text-muted">{{ $person['role'] }}</p>
+                            <p class="text-sm text-muted">{{ $person['role'] }}</p>
                         </div>
                         <div class="flex items-center gap-2">
                             <x-ui.severity-badge :severity="$person['severity']" />
-                            <span class="text-xs text-muted">{{ $person['findings'] }}x</span>
+                            <span class="text-sm text-muted">{{ $person['findings'] }}x</span>
                         </div>
                     </div>
                 @endforeach
@@ -250,8 +250,8 @@
                             <p class="text-sm font-medium text-text">{{ $finding['title'] }}</p>
                             <x-ui.severity-badge :severity="$finding['severity']" />
                         </div>
-                        <p class="text-xs text-muted mt-1">{{ $finding['user'] }} · {{ $finding['date'] }}</p>
-                        <p class="text-xs text-primary mt-0.5">{{ $finding['rule'] }}</p>
+                        <p class="text-sm text-muted mt-1">{{ $finding['user'] }} · {{ $finding['date'] }}</p>
+                        <p class="text-sm text-primary mt-0.5">{{ $finding['rule'] }}</p>
                     </div>
                 @endforeach
             </x-ui.card>
@@ -262,10 +262,10 @@
                 @foreach($stagnantRoadmapItems as $item)
                     <div class="py-2.5 {{ !$loop->last ? 'border-b border-border' : '' }}">
                         <p class="text-sm font-medium text-text">{{ $item['title'] }}</p>
-                        <p class="text-xs text-muted mt-0.5">{{ $item['big_rock'] }}</p>
+                        <p class="text-sm text-muted mt-0.5">{{ $item['big_rock'] }}</p>
                         <div class="flex items-center gap-2 mt-1.5">
                             <x-ui.status-badge :status="$item['status']" />
-                            <span class="text-xs text-danger font-medium">{{ $item['days_stagnant'] }} hari tanpa aktivitas</span>
+                            <span class="text-sm text-danger font-medium">{{ $item['days_stagnant'] }} hari tanpa aktivitas</span>
                         </div>
                     </div>
                 @endforeach
@@ -288,31 +288,31 @@
                     {{-- Hierarchy chain placeholder --}}
                     <div class="space-y-4">
                         <div class="bg-primary-light border border-primary/20 rounded-lg p-3">
-                            <p class="text-xs font-semibold text-primary uppercase tracking-wide">Big Rock</p>
+                            <p class="text-sm font-semibold text-primary uppercase tracking-wide">Big Rock</p>
                             <p class="text-sm font-medium text-text mt-1">Optimasi Proses</p>
                         </div>
                         <div class="flex justify-center"><svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg></div>
                         <div class="bg-app-bg border border-border rounded-lg p-3">
-                            <p class="text-xs font-semibold text-muted uppercase tracking-wide">Roadmap</p>
+                            <p class="text-sm font-semibold text-muted uppercase tracking-wide">Roadmap</p>
                             <p class="text-sm font-medium text-text mt-1">Implementasi SOP Baru</p>
                             <x-ui.status-badge status="in_progress" class="mt-1" />
                         </div>
                         <div class="flex justify-center"><svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg></div>
                         <div class="bg-app-bg border border-border rounded-lg p-3">
-                            <p class="text-xs font-semibold text-muted uppercase tracking-wide">Plan</p>
+                            <p class="text-sm font-semibold text-muted uppercase tracking-wide">Plan</p>
                             <p class="text-sm font-medium text-text mt-1">Review dokumen procurement</p>
-                            <p class="text-xs text-muted mt-1">Submitted: 7 Jul 2025, 08:30</p>
+                            <p class="text-sm text-muted mt-1">Submitted: 7 Jul 2025, 08:30</p>
                         </div>
                         <div class="flex justify-center"><svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg></div>
                         <div class="bg-app-bg border border-border rounded-lg p-3">
-                            <p class="text-xs font-semibold text-muted uppercase tracking-wide">Realization</p>
+                            <p class="text-sm font-semibold text-muted uppercase tracking-wide">Realization</p>
                             <p class="text-sm font-medium text-text mt-1">Belum diisi</p>
                             <x-ui.status-badge status="missing" class="mt-1" />
                         </div>
 
                         {{-- Triggered Rules --}}
                         <div class="mt-4 pt-4 border-t border-border">
-                            <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Triggered Rules</p>
+                            <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-3">Triggered Rules</p>
                             <div class="space-y-2">
                                 <div class="flex items-start gap-2 bg-danger-bg rounded-lg p-3">
                                     <x-ui.severity-badge severity="major" />
@@ -323,10 +323,10 @@
 
                         {{-- Timestamps --}}
                         <div class="mt-4 pt-4 border-t border-border">
-                            <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Timestamps</p>
+                            <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-2">Timestamps</p>
                             <div class="grid grid-cols-2 gap-3 text-sm">
-                                <div><p class="text-xs text-muted">Submitted</p><p class="text-text">7 Jul 2025, 08:30</p></div>
-                                <div><p class="text-xs text-muted">Window</p><p class="text-text">08:00 – 17:00</p></div>
+                                <div><p class="text-sm text-muted">Submitted</p><p class="text-text">7 Jul 2025, 08:30</p></div>
+                                <div><p class="text-sm text-muted">Window</p><p class="text-text">08:00 – 17:00</p></div>
                             </div>
                         </div>
                     </div>

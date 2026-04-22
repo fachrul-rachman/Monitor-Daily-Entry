@@ -19,7 +19,7 @@
                     <div class="relative">
                         <input
                             id="current_password"
-                            wire:model.defer="current_password"
+                            wire:model.live="current_password"
                             :type="showCurrent ? 'text' : 'password'"
                             autocomplete="current-password"
                             class="input pr-11 @error('current_password') input-error @enderror"
@@ -35,7 +35,7 @@
                         </button>
                     </div>
                     @error('current_password')
-                        <p class="text-xs text-danger mt-1">{{ $message }}</p>
+                        <p class="text-sm text-danger mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -46,7 +46,7 @@
                     <div class="relative">
                         <input
                             id="password"
-                            wire:model.defer="password"
+                            wire:model.live="password"
                             :type="showNew ? 'text' : 'password'"
                             autocomplete="new-password"
                             class="input pr-11 @error('password') input-error @enderror"
@@ -62,7 +62,7 @@
                         </button>
                     </div>
                     @error('password')
-                        <p class="text-xs text-danger mt-1">{{ $message }}</p>
+                        <p class="text-sm text-danger mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -73,7 +73,7 @@
                     <div class="relative">
                         <input
                             id="password_confirmation"
-                            wire:model.defer="password_confirmation"
+                            wire:model.live="password_confirmation"
                             :type="showConfirm ? 'text' : 'password'"
                             autocomplete="new-password"
                             class="input pr-11"

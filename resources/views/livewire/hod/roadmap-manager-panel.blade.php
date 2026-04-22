@@ -35,7 +35,7 @@
         <div class="p-5 border-b border-border flex items-center justify-between sticky top-0 bg-surface z-10">
             <div>
                 <h3 class="font-semibold text-text">Roadmap Items</h3>
-                <p class="text-xs text-muted mt-0.5">{{ $bigRockTitle }}</p>
+                <p class="text-sm text-muted mt-0.5">{{ $bigRockTitle }}</p>
             </div>
             <button @click="showPanel = false" class="text-muted hover:text-text text-lg">✕</button>
         </div>

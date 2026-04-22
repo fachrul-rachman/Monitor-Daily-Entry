@@ -85,8 +85,8 @@
                     <div class="flex items-start justify-between gap-2">
                         <div>
                             <p class="text-sm font-medium text-text">{{ $r['name'] }}</p>
-                            <p class="text-xs text-muted mt-0.5">{{ $r['division'] }} · {{ $r['type'] }}</p>
-                            <p class="text-xs text-muted mt-0.5">{{ $r['date'] }}</p>
+                            <p class="text-sm text-muted mt-0.5">{{ $r['division'] }} · {{ $r['type'] }}</p>
+                            <p class="text-sm text-muted mt-0.5">{{ $r['date'] }}</p>
                         </div>
                         <x-ui.status-badge :status="$r['status']" />
                     </div>
@@ -107,7 +107,7 @@
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <p class="text-sm font-medium text-text truncate">{{ ucfirst($n['channel']) }} · {{ $n['time'] }}</p>
-                            <p class="text-xs text-muted mt-1 truncate">{{ $n['error'] }}</p>
+                            <p class="text-sm text-muted mt-1 truncate">{{ $n['error'] }}</p>
                         </div>
                         <x-ui.status-badge status="failed" />
                     </div>

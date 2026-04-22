@@ -2,7 +2,7 @@
 
 <div>
     @if($paginator instanceof \Illuminate\Contracts\Pagination\Paginator && $paginator->hasPages())
-        <div class="flex items-center justify-between gap-3 text-xs text-muted">
+        <div class="flex items-center justify-between gap-3 text-sm text-muted">
             <p>
                 Menampilkan
                 <span class="font-medium text-text">
@@ -49,4 +49,3 @@
         </div>
     @endif
 </div>
-

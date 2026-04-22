@@ -25,8 +25,8 @@
         <form class="space-y-4" wire:submit.prevent="save">
             <div>
                 <label class="label">Nama Divisi <span class="text-danger">*</span></label>
-                <input type="text" class="input" placeholder="Nama divisi" wire:model.defer="name" />
-                @error('name') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                <input type="text" class="input" placeholder="Nama divisi" wire:model.live="name" />
+                @error('name') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
             </div>
 
             <div class="flex items-center gap-3">

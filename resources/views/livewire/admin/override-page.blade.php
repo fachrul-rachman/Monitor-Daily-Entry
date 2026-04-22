@@ -39,13 +39,13 @@
             <div class="w-40">
                 <label class="label">Dari</label>
                 <input type="date" class="input @error('from') input-error @enderror" wire:model.defer="from" />
-                @error('from') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                @error('from') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
             </div>
 
             <div class="w-40">
                 <label class="label">Sampai</label>
                 <input type="date" class="input @error('to') input-error @enderror" wire:model.defer="to" />
-                @error('to') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                @error('to') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
             </div>
 
             <div class="w-44">
@@ -106,12 +106,12 @@
                     <div>
                         <label class="label">Dari</label>
                         <input type="date" class="input @error('from') input-error @enderror" wire:model.defer="from" />
-                        @error('from') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        @error('from') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="label">Sampai</label>
                         <input type="date" class="input @error('to') input-error @enderror" wire:model.defer="to" />
-                        @error('to') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        @error('to') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
 
@@ -146,7 +146,7 @@
             <x-ui.card class="p-0 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
-                        <thead class="bg-app-bg text-muted text-xs uppercase tracking-wider">
+                        <thead class="bg-app-bg text-muted text-sm uppercase tracking-wider">
                             <tr>
                                 <th class="px-4 py-3 text-left">Tanggal</th>
                                 <th class="px-4 py-3 text-left">User</th>
@@ -193,13 +193,13 @@
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <p class="text-sm font-semibold text-text">{{ $row['user'] }}</p>
-                            <p class="text-xs text-muted mt-0.5">{{ $row['division'] }} · {{ $row['date'] }}</p>
+                            <p class="text-sm text-muted mt-0.5">{{ $row['division'] }} · {{ $row['date'] }}</p>
                         </div>
                     </div>
                     <div class="mt-3">
                         <p class="text-sm text-text font-medium">{{ $row['plan_title'] }}</p>
-                        <p class="text-xs text-muted mt-1">Big Rock: {{ $row['big_rock'] }}</p>
-                        <p class="text-xs text-muted mt-0.5">Roadmap: {{ $row['roadmap'] }}</p>
+                        <p class="text-sm text-muted mt-1">Big Rock: {{ $row['big_rock'] }}</p>
+                        <p class="text-sm text-muted mt-0.5">Roadmap: {{ $row['roadmap'] }}</p>
                         <div class="mt-2"><x-ui.status-badge :status="$row['realization_status']" /></div>
                     </div>
                     <div class="mt-3">
@@ -228,16 +228,16 @@
                 <div class="flex items-start justify-between gap-3">
                     <div>
                         <p class="text-sm font-semibold text-text">Override Entry</p>
-                        <p class="text-xs text-muted mt-0.5">Nilai lama ditampilkan sebagai referensi. Isi alasan override dengan jelas.</p>
+                        <p class="text-sm text-muted mt-0.5">Nilai lama ditampilkan sebagai referensi. Isi alasan override dengan jelas.</p>
                     </div>
                     <button type="button" class="btn-secondary px-3 py-2" @click="detailOpen = false; $wire.closeDrawer()">Tutup</button>
                 </div>
 
                 {{-- Selected info --}}
                 <div class="mt-4 bg-app-bg border border-border rounded-xl p-4">
-                    <p class="text-xs text-muted">Entry terpilih</p>
+                    <p class="text-sm text-muted">Entry terpilih</p>
                     <p class="text-sm font-semibold text-text mt-1">{{ $selected['user'] ?? '-' }}</p>
-                    <p class="text-xs text-muted mt-1">
+                    <p class="text-sm text-muted mt-1">
                         {{ $selected['division'] ?? '-' }} · {{ $selected['date'] ?? '-' }}
                         @if(!empty($selected['email']))
                             · {{ $selected['email'] }}
@@ -249,14 +249,14 @@
                 <div class="mt-5 space-y-4">
                     <div>
                         <p class="text-sm font-semibold text-text">Ubah status</p>
-                        <p class="text-xs text-muted mt-0.5">Override ini untuk membetulkan detail plan/realisasi termasuk Big Rock, Roadmap, dan lampiran.</p>
+                        <p class="text-sm text-muted mt-0.5">Override ini untuk membetulkan detail plan/realisasi termasuk Big Rock, Roadmap, dan lampiran.</p>
                     </div>
 
                     {{-- Plan --}}
                     <div class="bg-surface border border-border rounded-xl p-4 space-y-4">
                         <div>
                             <p class="text-sm font-semibold text-text">Plan</p>
-                            <p class="text-xs text-muted mt-0.5">Rencana wajib terkait Big Rock milik user yang bersangkutan.</p>
+                            <p class="text-sm text-muted mt-0.5">Rencana wajib terkait Big Rock milik user yang bersangkutan.</p>
                         </div>
 
                         <div>
@@ -267,7 +267,7 @@
                                     <option value="{{ $br['id'] }}">{{ $br['title'] }}</option>
                                 @endforeach
                             </select>
-                            @error('editBigRockId') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                            @error('editBigRockId') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
@@ -278,25 +278,25 @@
                                     <option value="{{ $rm['id'] }}">{{ $rm['title'] }}</option>
                                 @endforeach
                             </select>
-                            @error('editRoadmapItemId') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                            @error('editRoadmapItemId') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
                             <label class="label">Judul Plan <span class="text-danger">*</span></label>
-                            <input type="text" class="input border-primary" wire:model.defer="editPlanTitle" placeholder="Judul rencana..." />
-                            @error('editPlanTitle') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                            <input type="text" class="input border-primary" wire:model.live="editPlanTitle" placeholder="Judul rencana..." />
+                            @error('editPlanTitle') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
                             <label class="label">Deskripsi Plan</label>
-                            <textarea class="input min-h-[110px]" wire:model.defer="editPlanText" placeholder="Deskripsi rencana..."></textarea>
-                            @error('editPlanText') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                            <textarea class="input min-h-[110px]" wire:model.live="editPlanText" placeholder="Deskripsi rencana..."></textarea>
+                            @error('editPlanText') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
                             <label class="label">Kenapa terkait Big Rock & Roadmap <span class="text-danger">*</span></label>
-                            <textarea class="input min-h-[90px]" wire:model.defer="editPlanRelationReason" placeholder="Jelaskan keterkaitannya..."></textarea>
-                            @error('editPlanRelationReason') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                            <textarea class="input min-h-[90px]" wire:model.live="editPlanRelationReason" placeholder="Jelaskan keterkaitannya..."></textarea>
+                            @error('editPlanRelationReason') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
 
@@ -304,7 +304,7 @@
                     <div class="bg-surface border border-border rounded-xl p-4 space-y-4">
                         <div>
                             <p class="text-sm font-semibold text-text">Realisasi</p>
-                            <p class="text-xs text-muted mt-0.5">Realisasi bisa berbeda dari plan (misal ada halangan meeting mendadak).</p>
+                            <p class="text-sm text-muted mt-0.5">Realisasi bisa berbeda dari plan (misal ada halangan meeting mendadak).</p>
                         </div>
 
                         <div>
@@ -316,19 +316,19 @@
                                 <option value="not_done">Not Done</option>
                                 <option value="blocked">Blocked</option>
                             </select>
-                            @error('editRealizationStatus') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                            @error('editRealizationStatus') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
                             <label class="label">Deskripsi Realisasi</label>
-                            <textarea class="input min-h-[110px]" wire:model.defer="editRealizationText" placeholder="Apa yang benar-benar dikerjakan..."></textarea>
-                            @error('editRealizationText') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                            <textarea class="input min-h-[110px]" wire:model.live="editRealizationText" placeholder="Apa yang benar-benar dikerjakan..."></textarea>
+                            @error('editRealizationText') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
                             <label class="label">Alasan (jika tidak Done)</label>
-                            <textarea class="input min-h-[90px]" wire:model.defer="editRealizationReason" placeholder="Alasan jika belum sesuai rencana..."></textarea>
-                            @error('editRealizationReason') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                            <textarea class="input min-h-[90px]" wire:model.live="editRealizationReason" placeholder="Alasan jika belum sesuai rencana..."></textarea>
+                            @error('editRealizationReason') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
 
@@ -336,12 +336,12 @@
                     <div class="bg-surface border border-border rounded-xl p-4 space-y-4">
                         <div>
                             <p class="text-sm font-semibold text-text">Lampiran</p>
-                            <p class="text-xs text-muted mt-0.5">Anda bisa menghapus lampiran lama dan menambah lampiran baru. Maksimal 50MB per file.</p>
+                            <p class="text-sm text-muted mt-0.5">Anda bisa menghapus lampiran lama dan menambah lampiran baru. Maksimal 50MB per file.</p>
                         </div>
 
                         @if(!empty($existingAttachments))
                             <div class="space-y-2">
-                                <p class="text-xs font-semibold text-muted uppercase">Lampiran saat ini</p>
+                                <p class="text-sm font-semibold text-muted uppercase">Lampiran saat ini</p>
                                 @foreach($existingAttachments as $att)
                                     <label class="flex items-center gap-2 text-sm text-text">
                                         <input
@@ -351,7 +351,7 @@
                                             value="{{ $att['id'] }}"
                                         />
                                         <span class="truncate">{{ $att['name'] }}</span>
-                                        <span class="text-xs text-muted">(hapus)</span>
+                                        <span class="text-sm text-muted">(hapus)</span>
                                     </label>
                                 @endforeach
                             </div>
@@ -360,17 +360,17 @@
                         <div>
                             <label class="label">Tambah lampiran baru</label>
                             <input type="file" class="input" wire:model="newAttachments" multiple />
-                            @error('newAttachments.*') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
-                            <p class="text-xs text-muted mt-2">Tips: kalau gagal upload, kemungkinan batas upload server masih kecil.</p>
+                            @error('newAttachments.*') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
+                            <p class="text-sm text-muted mt-2">Tips: kalau gagal upload, kemungkinan batas upload server masih kecil.</p>
                         </div>
 
-                        <div wire:loading wire:target="newAttachments" class="text-xs text-muted">Mengunggah...</div>
+                        <div wire:loading wire:target="newAttachments" class="text-sm text-muted">Mengunggah...</div>
                     </div>
 
                     <div>
                         <label class="label">Alasan Override <span class="text-danger">*</span></label>
-                        <textarea class="input min-h-[120px]" placeholder="Jelaskan alasan override ini..." wire:model.defer="overrideReason"></textarea>
-                        @error('overrideReason') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        <textarea class="input min-h-[120px]" placeholder="Jelaskan alasan override ini..." wire:model.live="overrideReason"></textarea>
+                        @error('overrideReason') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     <div class="flex gap-2 pt-2">
@@ -399,18 +399,18 @@
                     @else
                         <div class="mt-3 bg-app-bg border border-border rounded-xl p-4">
                             <p class="text-sm font-medium text-text">Override terakhir</p>
-                            <p class="text-xs text-muted mt-1">{{ $lastAudit['actor'] ?? '-' }} · {{ $lastAudit['time'] ?? '-' }}</p>
+                            <p class="text-sm text-muted mt-1">{{ $lastAudit['actor'] ?? '-' }} · {{ $lastAudit['time'] ?? '-' }}</p>
                             <p class="text-sm text-text mt-3 whitespace-pre-wrap">{{ $lastAudit['reason'] ?? '' }}</p>
                         </div>
 
                         <div class="mt-3 grid grid-cols-1 gap-3">
                             <div class="bg-surface border border-border rounded-xl p-4">
-                                <p class="text-xs text-muted uppercase font-semibold">Before</p>
-                                <pre class="mt-2 text-xs text-text bg-app-bg rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">{{ json_encode(($lastAudit['changes']['before'] ?? []), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) }}</pre>
+                                <p class="text-sm text-muted uppercase font-semibold">Before</p>
+                                <pre class="mt-2 text-sm text-text bg-app-bg rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">{{ json_encode(($lastAudit['changes']['before'] ?? []), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) }}</pre>
                             </div>
                             <div class="bg-surface border border-border rounded-xl p-4">
-                                <p class="text-xs text-muted uppercase font-semibold">After</p>
-                                <pre class="mt-2 text-xs text-text bg-app-bg rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">{{ json_encode(($lastAudit['changes']['after'] ?? []), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) }}</pre>
+                                <p class="text-sm text-muted uppercase font-semibold">After</p>
+                                <pre class="mt-2 text-sm text-text bg-app-bg rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">{{ json_encode(($lastAudit['changes']['after'] ?? []), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) }}</pre>
                             </div>
                         </div>
                     @endif

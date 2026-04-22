@@ -33,7 +33,7 @@
                         <option value="{{ $hod['id'] }}">{{ $hod['name'] }} ({{ $hod['email'] }})</option>
                     @endforeach
                 </select>
-                @error('selectedHodId') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                @error('selectedHodId') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
             </div>
 
             <div>
@@ -63,8 +63,8 @@
                     @endforeach
                 </div>
 
-                @error('selectedDivisionIds') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
-                <p class="text-xs text-muted mt-1">
+                @error('selectedDivisionIds') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
+                <p class="text-sm text-muted mt-1">
                     {{ $assignmentId ? 'Mode edit: divisi dikunci. Jika perlu pindah divisi, hapus & buat assignment baru.' : 'Pilih satu atau lebih divisi.' }}
                 </p>
             </div>

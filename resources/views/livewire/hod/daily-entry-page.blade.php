@@ -55,25 +55,25 @@
         <div x-show="tab === 'plan'">
             <x-ui.card>
                 <h3 class="text-sm font-semibold text-text mb-3" style="font-family: 'DM Sans', sans-serif;">Rencana Hari Ini</h3>
-                <p class="text-xs text-muted mb-4">
+                <p class="text-sm text-muted mb-4">
                     Rencana yang diisi di sini <span class="font-semibold">wajib terkait Big Rock</span> Anda.
                 </p>
 
                 @if($planWindowBefore)
                     <div class="rounded-xl border border-border bg-app-bg px-4 py-3 mb-4">
                         <p class="text-sm font-semibold text-text">Plan belum dibuka</p>
-                        <p class="text-xs text-muted mt-1">Jam plan: {{ $planWindowInfo }}. Silakan kembali saat jam buka.</p>
+                        <p class="text-sm text-muted mt-1">Jam plan: {{ $planWindowInfo }}. Silakan kembali saat jam buka.</p>
                     </div>
                 @else
                 {{-- Daftar rencana yang sudah tersimpan hari ini --}}
                 @if(! empty($items))
                     <div class="mb-4 space-y-2">
-                        <p class="text-xs text-muted">Rencana yang sudah tersimpan:</p>
+                        <p class="text-sm text-muted">Rencana yang sudah tersimpan:</p>
                         @foreach($items as $item)
                             <div class="flex items-center justify-between px-3 py-2 rounded-lg border border-border bg-app-bg">
                                 <div class="min-w-0">
-                                    <p class="text-xs font-medium text-text truncate">{{ $item['title'] }}</p>
-                                    <p class="text-[11px] text-muted truncate">
+                                    <p class="text-sm font-medium text-text truncate">{{ $item['title'] }}</p>
+                                    <p class="text-sm text-muted truncate">
                                         {{ $item['big_rock'] ?? 'Tanpa Big Rock' }}
                                         @if($item['roadmap'])
                                             &middot; {{ $item['roadmap'] }}
@@ -82,7 +82,7 @@
                                 </div>
                                 <button
                                     type="button"
-                                    class="btn-secondary text-xs px-3 py-2"
+                                    class="btn-secondary text-sm px-3 py-2"
                                     wire:click="startEditPlan({{ $item['id'] }})"
                                     wire:target="startEditPlan"
                                     wire:loading.attr="disabled"
@@ -96,7 +96,7 @@
                 @endif
 
                 <div class="flex justify-between items-center mb-3">
-                    <p class="text-xs text-muted">
+                    <p class="text-sm text-muted">
                         @if(! $planFormOpen)
                             Form tidak langsung muncul supaya halaman tidak penuh. Klik <span class="font-semibold">Rencana baru</span> untuk mulai.
                         @else
@@ -106,7 +106,7 @@
                     <div class="flex items-center gap-2">
                         <button
                             type="button"
-                            class="btn-secondary text-xs px-3 py-2"
+                            class="btn-secondary text-sm px-3 py-2"
                             wire:click="startCreatePlan"
                             wire:target="startCreatePlan"
                             wire:loading.attr="disabled"
@@ -118,7 +118,7 @@
                         @if($planFormOpen)
                             <button
                                 type="button"
-                                class="btn-secondary text-xs px-3 py-2"
+                                class="btn-secondary text-sm px-3 py-2"
                                 wire:click="closePlanForm"
                                 wire:target="closePlanForm"
                                 wire:loading.attr="disabled"
@@ -131,13 +131,13 @@
                 </div>
 
                 @if($planWindowBefore)
-                    <p class="text-xs text-muted mb-4">
+                    <p class="text-sm text-muted mb-4">
                         Plan hanya dapat diisi setelah jam buka: {{ $planWindowInfo }}.
                     </p>
                 @elseif(! $planFormOpen)
                     <div class="rounded-xl border border-border bg-app-bg px-4 py-3 mb-4">
                         <p class="text-sm font-semibold text-text">Belum ada form yang terbuka</p>
-                        <p class="text-xs text-muted mt-1">Klik <span class="font-semibold">Rencana baru</span> untuk mulai mengisi.</p>
+                        <p class="text-sm text-muted mt-1">Klik <span class="font-semibold">Rencana baru</span> untuk mulai mengisi.</p>
                     </div>
                 @endif
 
@@ -158,9 +158,9 @@
                             @endforeach
                         </select>
                         @if(empty($bigRocks))
-                            <p class="text-xs text-warning mt-1">Belum ada Big Rock aktif. Tambahkan Big Rock terlebih dahulu.</p>
+                            <p class="text-sm text-warning mt-1">Belum ada Big Rock aktif. Tambahkan Big Rock terlebih dahulu.</p>
                         @endif
-                        @error('bigRockId') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        @error('bigRockId') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     {{-- Roadmap --}}
@@ -178,9 +178,9 @@
                             @endforeach
                         </select>
                         @if(! empty($bigRocks) && empty($roadmapItems) && $bigRockId)
-                            <p class="text-xs text-muted mt-1">Big Rock ini belum memiliki roadmap. Anda tetap bisa mengisi plan.</p>
+                            <p class="text-sm text-muted mt-1">Big Rock ini belum memiliki roadmap. Anda tetap bisa mengisi plan.</p>
                         @endif
-                        @error('roadmapItemId') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        @error('roadmapItemId') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     {{-- Judul Plan --}}
@@ -190,10 +190,10 @@
                             type="text"
                             class="input"
                             placeholder="Contoh: Review SOP proses klaim"
-                            wire:model.defer="planTitle"
+                            wire:model.live="planTitle"
                             @disabled($planWindowBefore)
                         />
-                        @error('planTitle') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        @error('planTitle') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     {{-- Deskripsi Plan --}}
@@ -202,10 +202,10 @@
                         <textarea
                             class="input min-h-[120px]"
                             placeholder="Contoh: Review SOP klaim untuk cabang utama dan identifikasi bottleneck..."
-                            wire:model.defer="planText"
+                            wire:model.live="planText"
                             @disabled($planWindowBefore)
                         ></textarea>
-                        @error('planText') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        @error('planText') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     {{-- Alasan keterkaitan dengan Big Rock --}}
@@ -214,14 +214,14 @@
                         <textarea
                             class="input min-h-[80px]"
                             placeholder="Contoh: Review ini bagian dari tahapan implementasi SOP baru di seluruh cabang..."
-                            wire:model.defer="planRelationReason"
+                            wire:model.live="planRelationReason"
                             @disabled($planWindowBefore)
                         ></textarea>
-                        @error('planRelationReason') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        @error('planRelationReason') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     @if($storedPlanStatus)
-                        <p class="text-xs text-muted">
+                        <p class="text-sm text-muted">
                             Status plan hari ini:
                             <span class="font-semibold text-text">{{ ucfirst($storedPlanStatus) }}</span>
                         </p>
@@ -239,7 +239,7 @@
                             <span wire:loading.remove wire:target="savePlan">
                                 Simpan Rencana
                                 @if($planWindowAfter)
-                                    <span class="text-xs font-normal text-warning ml-1">(Akan dianggap Late)</span>
+                                    <span class="text-sm font-normal text-warning ml-1">(Akan dianggap Late)</span>
                                 @endif
                             </span>
                             <span wire:loading wire:target="savePlan" class="flex items-center gap-2">
@@ -259,12 +259,12 @@
         <div x-show="tab === 'realisasi'">
             <x-ui.card>
                 <h3 class="text-sm font-semibold text-text mb-3" style="font-family: 'DM Sans', sans-serif;">Realisasi Hari Ini</h3>
-                <p class="text-xs text-muted mb-4">
+                <p class="text-sm text-muted mb-4">
                     Pilih rencana yang ingin Anda evaluasi, lalu jelaskan realisasinya.
                 </p>
 
                 <div class="flex items-center justify-between mb-3">
-                    <p class="text-xs text-muted">
+                    <p class="text-sm text-muted">
                         @if($realizationWindowBefore)
                             Realisasi belum dibuka. Anda bisa mulai mengisi saat jam {{ $realizationWindowInfo }}.
                         @elseif(empty($items) && ! $realizationFormOpen)
@@ -279,7 +279,7 @@
                         <div class="flex items-center gap-2">
                             <button
                                 type="button"
-                                class="btn-secondary text-xs px-3 py-2"
+                                class="btn-secondary text-sm px-3 py-2"
                                 wire:click="startRealization"
                                 wire:target="startRealization"
                                 wire:loading.attr="disabled"
@@ -290,7 +290,7 @@
                             @if($realizationFormOpen)
                                 <button
                                     type="button"
-                                    class="btn-secondary text-xs px-3 py-2"
+                                    class="btn-secondary text-sm px-3 py-2"
                                     wire:click="closeRealizationForm"
                                     wire:target="closeRealizationForm"
                                     wire:loading.attr="disabled"
@@ -305,24 +305,24 @@
 
                 @if($realizationNotice)
                     <div class="rounded-xl border border-border bg-app-bg px-4 py-3 mb-4">
-                        <p class="text-xs text-muted">{{ $realizationNotice }}</p>
+                        <p class="text-sm text-muted">{{ $realizationNotice }}</p>
                     </div>
                 @endif
 
                 @if($realizationWindowBefore)
                     <div class="rounded-xl border border-border bg-app-bg px-4 py-3 mb-4">
                         <p class="text-sm font-semibold text-text">Realisasi belum dibuka</p>
-                        <p class="text-xs text-muted mt-1">Jam realisasi: {{ $realizationWindowInfo }}.</p>
+                        <p class="text-sm text-muted mt-1">Jam realisasi: {{ $realizationWindowInfo }}.</p>
                     </div>
                 @elseif(empty($items) && ! $realizationFormOpen)
                     <div class="rounded-xl border border-border bg-app-bg px-4 py-3 mb-4">
                         <p class="text-sm font-semibold text-text">Belum ada rencana</p>
-                        <p class="text-xs text-muted mt-1">Isi rencana dulu di tab Plan, lalu kembali ke sini.</p>
+                        <p class="text-sm text-muted mt-1">Isi rencana dulu di tab Plan, lalu kembali ke sini.</p>
                     </div>
                 @elseif(! $realizationFormOpen)
                     <div class="rounded-xl border border-border bg-app-bg px-4 py-3 mb-4">
                         <p class="text-sm font-semibold text-text">Belum ada form yang terbuka</p>
-                        <p class="text-xs text-muted mt-1">Klik <span class="font-semibold">Realisasi baru</span> untuk mulai mengisi.</p>
+                        <p class="text-sm text-muted mt-1">Klik <span class="font-semibold">Realisasi baru</span> untuk mulai mengisi.</p>
                     </div>
                 @endif
 
@@ -343,7 +343,7 @@
                             @endforeach
                         </select>
                         @if(empty($items))
-                            <p class="text-xs text-warning mt-1">
+                            <p class="text-sm text-warning mt-1">
                                 Belum ada rencana hari ini. Isi dulu di tab Plan.
                             </p>
                         @endif
@@ -362,7 +362,7 @@
                             <option value="not_done">Tidak Dikerjakan</option>
                             <option value="blocked">Blocked</option>
                         </select>
-                        @error('realizationStatus') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        @error('realizationStatus') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     {{-- Deskripsi Realisasi --}}
@@ -371,10 +371,10 @@
                         <textarea
                             class="input min-h-[120px]"
                             placeholder="Contoh: Review selesai 80%, ada kendala data dari tim finance..."
-                            wire:model.defer="realizationText"
+                            wire:model.live="realizationText"
                             @disabled($realizationWindowBefore || empty($items) || ! $selectedItemId)
                         ></textarea>
-                        @error('realizationText') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        @error('realizationText') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     {{-- Alasan jika tidak selesai --}}
@@ -383,10 +383,10 @@
                         <textarea
                             class="input min-h-[80px]"
                             placeholder="Contoh: Ada meeting mendadak dengan Director, pekerjaan tertunda ke besok."
-                            wire:model.defer="realizationReason"
+                            wire:model.live="realizationReason"
                             @disabled($realizationWindowBefore || empty($items) || ! $selectedItemId)
                         ></textarea>
-                        @error('realizationReason') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        @error('realizationReason') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     {{-- Lampiran --}}
@@ -399,17 +399,17 @@
                             wire:model="realizationAttachments"
                             @disabled($realizationWindowBefore || empty($items) || ! $selectedItemId)
                         />
-                        <p wire:loading wire:target="realizationAttachments" class="text-xs text-muted mt-1">
+                        <p wire:loading wire:target="realizationAttachments" class="text-sm text-muted mt-1">
                             Mengunggah lampiran...
                         </p>
-                        <p class="text-[11px] text-muted mt-1">
+                        <p class="text-sm text-muted mt-1">
                             Bisa upload lebih dari 1 file. Maks 50MB per file (bukan gabungan).
                         </p>
-                        @error('realizationAttachments') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
-                        @error('realizationAttachments.*') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        @error('realizationAttachments') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
+                        @error('realizationAttachments.*') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
 
                         @if($currentAttachmentPath)
-                            <p class="text-[11px] text-muted mt-1">
+                            <p class="text-sm text-muted mt-1">
                                 Sudah ada lampiran tersimpan untuk rencana ini.
                             </p>
                         @endif
@@ -417,14 +417,14 @@
                         @if(! empty($existingAttachments))
                             <div class="mt-2 space-y-1">
                                 @foreach($existingAttachments as $att)
-                                    <p class="text-[11px] text-muted truncate">- {{ $att['name'] }}</p>
+                                    <p class="text-sm text-muted truncate">- {{ $att['name'] }}</p>
                                 @endforeach
                             </div>
                         @endif
                     </div>
 
                     @if($storedRealizationStatus)
-                        <p class="text-xs text-muted">
+                        <p class="text-sm text-muted">
                             Status realisasi hari ini:
                             <span class="font-semibold text-text">{{ ucfirst($storedRealizationStatus) }}</span>
                         </p>
@@ -442,7 +442,7 @@
                             <span wire:loading.remove wire:target="saveRealization">
                                 Simpan Realisasi
                                 @if($realizationWindowAfter)
-                                    <span class="text-xs font-normal text-warning ml-1">(Akan dianggap Late)</span>
+                                    <span class="text-sm font-normal text-warning ml-1">(Akan dianggap Late)</span>
                                 @endif
                             </span>
                             <span wire:loading wire:target="saveRealization" class="flex items-center gap-2">

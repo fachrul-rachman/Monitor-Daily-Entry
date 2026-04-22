@@ -161,7 +161,7 @@
                     </div>
                     <div>
                         <p class="text-sm font-semibold text-primary">Plan Hari Ini Belum Diisi</p>
-                        <p class="text-xs text-primary/70">Window Plan: {{ $planWindowInfo }}</p>
+                        <p class="text-sm text-primary/70">Window Plan: {{ $planWindowInfo }}</p>
                     </div>
                 </div>
                 <a href="{{ route('hod.daily-entry') }}" class="btn-primary shrink-0">Isi Plan Sekarang</a>
@@ -176,7 +176,7 @@
                     </div>
                     <div>
                         <p class="text-sm font-semibold text-warning">Realisasi Belum Diisi</p>
-                        <p class="text-xs text-warning/70">Window Realisasi: {{ $realizationWindowInfo }}</p>
+                        <p class="text-sm text-warning/70">Window Realisasi: {{ $realizationWindowInfo }}</p>
                     </div>
                 </div>
                 <a href="{{ route('hod.daily-entry') }}" class="btn-primary shrink-0">Isi Realisasi</a>
@@ -194,9 +194,9 @@
                         <p class="font-semibold text-text text-sm">{{ $br['title'] }}</p>
                         <x-ui.status-badge :status="$br['status']" />
                     </div>
-                    <p class="text-xs text-muted mt-1">{{ $br['roadmap_count'] }} roadmap items</p>
+                    <p class="text-sm text-muted mt-1">{{ $br['roadmap_count'] }} roadmap items</p>
                     <div class="mt-3">
-                        <div class="flex items-center justify-between text-xs text-muted mb-1">
+                        <div class="flex items-center justify-between text-sm text-muted mb-1">
                             <span>Progress</span>
                             <span>{{ $br['progress'] }}%</span>
                         </div>
@@ -217,11 +217,11 @@
                 <div class="flex items-center justify-between py-3 {{ !$loop->last ? 'border-b border-border' : '' }}">
                     <div>
                         <p class="text-sm font-medium text-text">{{ $mgr['name'] }}</p>
-                        <p class="text-xs text-muted mt-0.5">{{ $mgr['latest'] }}</p>
+                        <p class="text-sm text-muted mt-0.5">{{ $mgr['latest'] }}</p>
                     </div>
                     <div class="flex items-center gap-2">
                         <x-ui.severity-badge :severity="$mgr['severity']" />
-                        <span class="text-xs text-muted">{{ $mgr['findings'] }}x</span>
+                        <span class="text-sm text-muted">{{ $mgr['findings'] }}x</span>
                     </div>
                 </div>
             @endforeach

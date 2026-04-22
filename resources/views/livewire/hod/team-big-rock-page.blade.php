@@ -25,7 +25,7 @@
 
     <div class="rounded-xl border border-border bg-app-bg px-4 py-3 mb-4">
         <p class="text-sm text-text font-medium">Catatan</p>
-        <p class="text-xs text-muted mt-1">HoD bisa melihat Big Rock Manager untuk monitoring, tapi tidak bisa mengedit atau menggunakannya di plan/realisasi.</p>
+        <p class="text-sm text-muted mt-1">HoD bisa melihat Big Rock Manager untuk monitoring, tapi tidak bisa mengedit atau menggunakannya di plan/realisasi.</p>
     </div>
 
     <div x-data="{ drawerOpen: @entangle('drawerOpen') }">
@@ -38,14 +38,14 @@
                     </div>
 
                     <h4 class="text-sm font-semibold text-text mb-1">{{ $row['title'] }}</h4>
-                    <p class="text-xs text-muted line-clamp-2 mb-3">{{ $row['description'] }}</p>
+                    <p class="text-sm text-muted line-clamp-2 mb-3">{{ $row['description'] }}</p>
 
-                    <div class="text-xs text-muted mb-3">
+                    <div class="text-sm text-muted mb-3">
                         {{ $row['start'] }} &mdash; {{ $row['end'] }}
                     </div>
 
                     <div class="mb-3">
-                        <div class="flex items-center justify-between text-xs text-muted mb-1">
+                        <div class="flex items-center justify-between text-sm text-muted mb-1">
                             <span>Progress</span>
                             <span>{{ $row['progress'] }}%</span>
                         </div>
@@ -55,9 +55,9 @@
                     </div>
 
                     <div class="mt-auto pt-3 border-t border-border">
-                        <p class="text-xs text-muted">{{ $row['owner'] }}</p>
+                        <p class="text-sm text-muted">{{ $row['owner'] }}</p>
                         <div class="flex items-center justify-between mt-2">
-                            <span class="text-xs text-muted">{{ $row['roadmap_count'] }} roadmap items</span>
+                            <span class="text-sm text-muted">{{ $row['roadmap_count'] }} roadmap items</span>
                             <button
                                 type="button"
                                 class="btn-secondary px-4"
@@ -93,7 +93,7 @@
                 <div class="p-5 border-b border-border flex items-center justify-between sticky top-0 bg-surface z-10">
                     <div class="min-w-0">
                         <h3 class="font-semibold text-text truncate">{{ $selected['title'] ?? 'Detail Big Rock' }}</h3>
-                        <p class="text-xs text-muted mt-0.5">{{ $selected['owner'] ?? '-' }}</p>
+                        <p class="text-sm text-muted mt-0.5">{{ $selected['owner'] ?? '-' }}</p>
                     </div>
                     <button type="button" class="btn-secondary px-4" wire:click="closeDrawer">Tutup</button>
                 </div>
@@ -101,29 +101,29 @@
                 <div class="p-5 space-y-4">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <p class="text-xs text-muted">Status</p>
+                            <p class="text-sm text-muted">Status</p>
                             <x-ui.status-badge :status="$selected['status'] ?? 'active'" />
                         </div>
                         <div>
-                            <p class="text-xs text-muted">Periode</p>
+                            <p class="text-sm text-muted">Periode</p>
                             <p class="text-sm text-text">{{ $selected['start'] ?? '-' }} &mdash; {{ $selected['end'] ?? '-' }}</p>
                         </div>
                     </div>
 
                     <div>
-                        <p class="text-xs font-semibold text-muted uppercase tracking-wide">Deskripsi</p>
+                        <p class="text-sm font-semibold text-muted uppercase tracking-wide">Deskripsi</p>
                         <div class="rounded-xl border border-border bg-app-bg px-4 py-3 mt-2">
                             <p class="text-sm text-text whitespace-pre-line">{{ $selected['description'] ?? '' }}</p>
                         </div>
                     </div>
 
                     <div>
-                        <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Roadmap Items</p>
+                        <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-2">Roadmap Items</p>
                         @forelse($selectedRoadmaps as $rm)
                             <div class="p-4 rounded-xl border border-border bg-surface flex items-start justify-between gap-3 mb-2">
                                 <div class="min-w-0">
                                     <p class="text-sm font-medium text-text">{{ $rm['title'] }}</p>
-                                    <p class="text-xs text-muted mt-1">Urutan: {{ $rm['sort_order'] }}</p>
+                                    <p class="text-sm text-muted mt-1">Urutan: {{ $rm['sort_order'] }}</p>
                                 </div>
                                 <x-ui.status-badge :status="$rm['status']" />
                             </div>
@@ -136,4 +136,3 @@
         </div>
     </div>
 </div>
-

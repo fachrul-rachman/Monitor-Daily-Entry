@@ -21,7 +21,7 @@
             </div>
             <div class="flex-1">
                 <p class="font-semibold text-text group-hover:text-primary transition-colors">Admin</p>
-                <p class="text-xs text-muted">User, Divisi, Assignment, Setting, Cuti, Override, Notifikasi</p>
+                <p class="text-sm text-muted">User, Divisi, Assignment, Setting, Cuti, Override, Notifikasi</p>
             </div>
             <svg class="w-5 h-5 text-muted group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </a>
@@ -34,7 +34,7 @@
             </div>
             <div class="flex-1">
                 <p class="font-semibold text-text group-hover:text-primary transition-colors">Director</p>
-                <p class="text-xs text-muted">Dashboard, Company, Divisions, AI Chat</p>
+                <p class="text-sm text-muted">Dashboard, Company, Divisions, AI Chat</p>
             </div>
             <svg class="w-5 h-5 text-muted group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </a>
@@ -47,7 +47,7 @@
             </div>
             <div class="flex-1">
                 <p class="font-semibold text-text group-hover:text-primary transition-colors">Head of Division</p>
-                <p class="text-xs text-muted">Dashboard, Entry Harian, Big Rock, Divisi, AI Chat</p>
+                <p class="text-sm text-muted">Dashboard, Entry Harian, Big Rock, Divisi, AI Chat</p>
             </div>
             <svg class="w-5 h-5 text-muted group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </a>
@@ -60,7 +60,7 @@
             </div>
             <div class="flex-1">
                 <p class="font-semibold text-text group-hover:text-primary transition-colors">Manager</p>
-                <p class="text-xs text-muted">Dashboard, Entry Harian, Riwayat, Big Rock</p>
+                <p class="text-sm text-muted">Dashboard, Entry Harian, Riwayat, Big Rock</p>
             </div>
             <svg class="w-5 h-5 text-muted group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </a>

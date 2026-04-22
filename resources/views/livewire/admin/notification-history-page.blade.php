@@ -21,13 +21,13 @@
             <div class="w-40">
                 <label class="label">Dari</label>
                 <input type="date" class="input @error('from') input-error @enderror" wire:model.defer="from" />
-                @error('from') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                @error('from') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
             </div>
 
             <div class="w-40">
                 <label class="label">Sampai</label>
                 <input type="date" class="input @error('to') input-error @enderror" wire:model.defer="to" />
-                @error('to') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                @error('to') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
             </div>
 
             <div class="w-40">
@@ -99,12 +99,12 @@
                     <div>
                         <label class="label">Dari</label>
                         <input type="date" class="input @error('from') input-error @enderror" wire:model.defer="from" />
-                        @error('from') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        @error('from') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="label">Sampai</label>
                         <input type="date" class="input @error('to') input-error @enderror" wire:model.defer="to" />
-                        @error('to') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        @error('to') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
 
@@ -161,7 +161,7 @@
             <x-ui.card class="p-0 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
-                        <thead class="bg-app-bg text-muted text-xs uppercase tracking-wider">
+                        <thead class="bg-app-bg text-muted text-sm uppercase tracking-wider">
                             <tr>
                                 <th class="px-4 py-3 text-left">Waktu</th>
                                 <th class="px-4 py-3 text-left">Channel</th>
@@ -211,7 +211,7 @@
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <p class="text-sm font-medium text-text truncate">{{ $row['summary'] }}</p>
-                            <p class="text-xs text-muted mt-0.5">{{ $row['time'] }} · {{ ucfirst($row['channel']) }} · {{ $row['type'] }}</p>
+                            <p class="text-sm text-muted mt-0.5">{{ $row['time'] }} · {{ ucfirst($row['channel']) }} · {{ $row['type'] }}</p>
                         </div>
                         <x-ui.status-badge :status="$row['status']" />
                     </div>
@@ -250,7 +250,7 @@
                 <div class="flex items-start justify-between gap-3">
                     <div>
                         <p class="text-sm font-semibold text-text">Detail Notifikasi</p>
-                        <p class="text-xs text-muted mt-0.5">Ringkasan dan payload yang dikirim.</p>
+                        <p class="text-sm text-muted mt-0.5">Ringkasan dan payload yang dikirim.</p>
                     </div>
                     <button type="button" class="btn-secondary px-3 py-2" @click="detailOpen = false; $wire.closeDrawer()">
                         Tutup
@@ -262,7 +262,7 @@
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
                                 <p class="text-sm font-medium text-text">{{ $selected['summary'] ?? '-' }}</p>
-                                <p class="text-xs text-muted mt-1">
+                                <p class="text-sm text-muted mt-1">
                                     {{ ucfirst($selected['channel'] ?? '-') }} · {{ $selected['type'] ?? '-' }} ·
                                     {{ $selected['context_date'] ?? '-' }}
                                 </p>
@@ -273,11 +273,11 @@
 
                     <div class="grid grid-cols-2 gap-3">
                         <div class="bg-surface border border-border rounded-xl p-4">
-                            <p class="text-xs text-muted">Dibuat</p>
+                            <p class="text-sm text-muted">Dibuat</p>
                             <p class="text-sm font-medium text-text mt-1">{{ $selected['created_at'] ?? '-' }}</p>
                         </div>
                         <div class="bg-surface border border-border rounded-xl p-4">
-                            <p class="text-xs text-muted">Dikirim / Gagal</p>
+                            <p class="text-sm text-muted">Dikirim / Gagal</p>
                             <p class="text-sm font-medium text-text mt-1">
                                 {{ $selected['sent_at'] ?? '-' }}
                                 @if(!empty($selected['failed_at']))
@@ -288,13 +288,13 @@
                     </div>
 
                     <div class="bg-surface border border-border rounded-xl p-4">
-                        <p class="text-xs font-semibold text-muted uppercase">Payload</p>
-                        <pre class="mt-2 text-xs text-text bg-app-bg rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">{{ json_encode($selected['payload'] ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) }}</pre>
+                        <p class="text-sm font-semibold text-muted uppercase">Payload</p>
+                        <pre class="mt-2 text-sm text-text bg-app-bg rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">{{ json_encode($selected['payload'] ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) }}</pre>
                     </div>
 
                     @if(!empty($selected['error_message']))
                         <div class="bg-danger-bg border border-danger/30 rounded-xl p-4">
-                            <p class="text-xs font-semibold text-danger uppercase">Error</p>
+                            <p class="text-sm font-semibold text-danger uppercase">Error</p>
                             <p class="text-sm text-danger mt-2 whitespace-pre-wrap">{{ $selected['error_message'] }}</p>
                         </div>
                     @endif
@@ -303,4 +303,3 @@
         </div>
     </div>
 </div>
-

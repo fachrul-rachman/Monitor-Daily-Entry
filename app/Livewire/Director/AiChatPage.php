@@ -5,6 +5,7 @@ namespace App\Livewire\Director;
 use App\Models\DailyEntry;
 use App\Models\Division;
 use App\Models\Finding;
+use App\Models\Holiday;
 use App\Models\HealthScore;
 use App\Models\User;
 use App\Services\OpenAIResponsesClient;
@@ -126,6 +127,38 @@ Aturan penting:
 - Ikuti permintaan user (mis. jika user minta top 1, berikan top 1 saja).
 - Total bullet gabungan (reasons+follow_up+next_actions) maksimal 8 item.
 SYS;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function buildWorkdays(string $from, string $to): array
+    {
+        $fromDate = Carbon::parse($from)->startOfDay();
+        $toDate = Carbon::parse($to)->startOfDay();
+
+        $holidayDates = Holiday::query()
+            ->whereBetween('holiday_date', [$fromDate->toDateString(), $toDate->toDateString()])
+            ->where('is_holiday', true)
+            ->where('is_joint_holiday', false)
+            ->pluck('holiday_date')
+            ->map(fn ($d) => Carbon::parse($d)->toDateString())
+            ->all();
+        $holidaySet = array_fill_keys($holidayDates, true);
+
+        $workdays = [];
+        $cursor = $fromDate->copy();
+        while ($cursor->lte($toDate)) {
+            if (! $cursor->isWeekend()) {
+                $key = $cursor->toDateString();
+                if (! isset($holidaySet[$key])) {
+                    $workdays[] = $key;
+                }
+            }
+            $cursor->addDay();
+        }
+
+        return $workdays;
     }
 
     protected function extractJsonObject(string $text): ?string
@@ -392,15 +425,7 @@ SYS;
             ->pluck('id')
             ->all();
 
-        $workdays = [];
-        $cursor = Carbon::parse($from);
-        $toDate = Carbon::parse($to);
-        while ($cursor->lte($toDate)) {
-            if (! $cursor->isWeekend()) {
-                $workdays[] = $cursor->toDateString();
-            }
-            $cursor->addDay();
-        }
+        $workdays = $this->buildWorkdays($from, $to);
 
         $required = max(count($activeUserIds) * max(count($workdays), 1), 1);
         $onTime = DailyEntry::query()

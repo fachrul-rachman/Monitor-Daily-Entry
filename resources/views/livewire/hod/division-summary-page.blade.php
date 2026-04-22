@@ -233,11 +233,11 @@
                 <div class="flex items-center justify-between py-3 {{ !$loop->last ? 'border-b border-border' : '' }}">
                     <div>
                         <p class="text-sm font-medium text-text">{{ $mgr['name'] }}</p>
-                        <p class="text-xs text-muted mt-0.5">{{ $mgr['detail'] }}</p>
+                        <p class="text-sm text-muted mt-0.5">{{ $mgr['detail'] }}</p>
                     </div>
                     <div class="flex items-center gap-2">
                         <x-ui.severity-badge :severity="$mgr['severity']" />
-                        <span class="text-xs text-muted">{{ $mgr['findings'] }}x</span>
+                        <span class="text-sm text-muted">{{ $mgr['findings'] }}x</span>
                     </div>
                 </div>
             @empty
@@ -253,7 +253,7 @@
                         <p class="text-sm font-medium text-text">{{ $finding['title'] }}</p>
                         <x-ui.severity-badge :severity="$finding['severity']" />
                     </div>
-                    <p class="text-xs text-muted mt-1">{{ $finding['user'] }} &middot; {{ $finding['date'] }}</p>
+                    <p class="text-sm text-muted mt-1">{{ $finding['user'] }} &middot; {{ $finding['date'] }}</p>
                 </div>
             @endforeach
         </x-ui.card>

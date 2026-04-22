@@ -53,15 +53,15 @@
                     </div>
 
                     <h4 class="text-sm font-semibold text-text mb-1">{{ $br['title'] }}</h4>
-                    <p class="text-xs text-muted line-clamp-2 mb-3">{{ $br['description'] }}</p>
+                    <p class="text-sm text-muted line-clamp-2 mb-3">{{ $br['description'] }}</p>
 
-                    <div class="text-xs text-muted mb-3">
+                    <div class="text-sm text-muted mb-3">
                         {{ $br['start'] }} &mdash; {{ $br['end'] }}
                     </div>
 
                     {{-- Progress --}}
                     <div class="mb-3">
-                        <div class="flex items-center justify-between text-xs text-muted mb-1">
+                        <div class="flex items-center justify-between text-sm text-muted mb-1">
                             <span>Progress</span>
                             <span>{{ $br['progress'] }}%</span>
                         </div>
@@ -72,7 +72,7 @@
 
                     {{-- Footer --}}
                     <div class="mt-auto pt-3 border-t border-border flex items-center justify-between">
-                        <span class="text-xs text-muted">{{ $br['roadmap_count'] }} roadmap items</span>
+                        <span class="text-sm text-muted">{{ $br['roadmap_count'] }} roadmap items</span>
                         <button
                             type="button"
                             class="text-sm text-primary font-medium hover:underline"
@@ -107,7 +107,7 @@
                 <div class="p-5 border-b border-border flex items-center justify-between sticky top-0 bg-surface z-10">
                     <div class="min-w-0">
                         <h3 class="font-semibold text-text truncate">{{ $selectedBigRockTitle ?: 'Roadmap' }}</h3>
-                        <p class="text-xs text-muted mt-0.5">Roadmap item untuk Big Rock ini</p>
+                        <p class="text-sm text-muted mt-0.5">Roadmap item untuk Big Rock ini</p>
                     </div>
                     <button type="button" class="btn-secondary px-4" wire:click="closeRoadmapDrawer">Tutup</button>
                 </div>
@@ -125,7 +125,7 @@
                         <div class="p-4 rounded-xl border border-border bg-surface flex items-start justify-between gap-3">
                             <div class="min-w-0">
                                 <p class="text-sm font-medium text-text">{{ $rm['title'] }}</p>
-                                <p class="text-xs text-muted mt-1">Urutan: {{ $rm['sort_order'] }}</p>
+                                <p class="text-sm text-muted mt-1">Urutan: {{ $rm['sort_order'] }}</p>
                             </div>
                             <div class="flex items-center gap-2 shrink-0">
                                 <x-ui.status-badge :status="$rm['status']" />
@@ -150,7 +150,7 @@
                     @empty
                         <div class="rounded-xl border border-border bg-app-bg px-4 py-3">
                             <p class="text-sm font-semibold text-text">Belum ada roadmap item</p>
-                            <p class="text-xs text-muted mt-1">Tambahkan roadmap item untuk memecah Big Rock menjadi langkah-langkah.</p>
+                            <p class="text-sm text-muted mt-1">Tambahkan roadmap item untuk memecah Big Rock menjadi langkah-langkah.</p>
                         </div>
                     @endforelse
                 </div>
@@ -178,39 +178,39 @@
                 <form class="space-y-4" wire:submit.prevent="saveBigRock">
                     <div>
                         <label class="label">Judul</label>
-                        <input type="text" class="input @error('bigRockTitle') input-error @enderror" wire:model.defer="bigRockTitle" />
-                        @error('bigRockTitle') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        <input type="text" class="input @error('bigRockTitle') input-error @enderror" wire:model.live="bigRockTitle" />
+                        @error('bigRockTitle') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     <div>
                         <label class="label">Deskripsi</label>
-                        <textarea class="input min-h-[110px] @error('bigRockDescription') input-error @enderror" wire:model.defer="bigRockDescription"></textarea>
-                        @error('bigRockDescription') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        <textarea class="input min-h-[110px] @error('bigRockDescription') input-error @enderror" wire:model.live="bigRockDescription"></textarea>
+                        @error('bigRockDescription') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="label">Mulai</label>
-                            <input type="date" class="input @error('bigRockStartDate') input-error @enderror" wire:model.defer="bigRockStartDate" />
-                            @error('bigRockStartDate') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                            <input type="date" class="input @error('bigRockStartDate') input-error @enderror" wire:model.live="bigRockStartDate" />
+                            @error('bigRockStartDate') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
                             <label class="label">Selesai</label>
-                            <input type="date" class="input @error('bigRockEndDate') input-error @enderror" wire:model.defer="bigRockEndDate" />
-                            @error('bigRockEndDate') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                            <input type="date" class="input @error('bigRockEndDate') input-error @enderror" wire:model.live="bigRockEndDate" />
+                            @error('bigRockEndDate') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
 
                     <div>
                         <label class="label">Status</label>
-                        <select class="input @error('bigRockStatus') input-error @enderror" wire:model.defer="bigRockStatus">
+                        <select class="input @error('bigRockStatus') input-error @enderror" wire:model.live="bigRockStatus">
                             <option value="active">Active</option>
                             <option value="on_track">On Track</option>
                             <option value="at_risk">At Risk</option>
                             <option value="completed">Completed</option>
                             <option value="archived">Archived</option>
                         </select>
-                        @error('bigRockStatus') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        @error('bigRockStatus') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     <div class="flex items-center justify-end gap-2 pt-2">
@@ -245,26 +245,26 @@
                 <form class="space-y-4" wire:submit.prevent="saveRoadmap">
                     <div>
                         <label class="label">Judul</label>
-                        <input type="text" class="input @error('roadmapTitle') input-error @enderror" wire:model.defer="roadmapTitle" />
-                        @error('roadmapTitle') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                        <input type="text" class="input @error('roadmapTitle') input-error @enderror" wire:model.live="roadmapTitle" />
+                        @error('roadmapTitle') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="label">Status</label>
-                            <select class="input @error('roadmapStatus') input-error @enderror" wire:model.defer="roadmapStatus">
+                            <select class="input @error('roadmapStatus') input-error @enderror" wire:model.live="roadmapStatus">
                                 <option value="planned">Planned</option>
                                 <option value="in_progress">In Progress</option>
                                 <option value="blocked">Blocked</option>
                                 <option value="finished">Finished</option>
                                 <option value="archived">Archived</option>
                             </select>
-                            @error('roadmapStatus') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                            @error('roadmapStatus') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
                             <label class="label">Urutan</label>
-                            <input type="number" class="input @error('roadmapSortOrder') input-error @enderror" wire:model.defer="roadmapSortOrder" />
-                            @error('roadmapSortOrder') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                            <input type="number" class="input @error('roadmapSortOrder') input-error @enderror" wire:model.live="roadmapSortOrder" />
+                            @error('roadmapSortOrder') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
 
@@ -280,4 +280,3 @@
         </div>
     </div>
 </div>
-

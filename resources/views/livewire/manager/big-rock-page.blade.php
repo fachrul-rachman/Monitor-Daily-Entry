@@ -112,15 +112,15 @@
                     </div>
 
                     <h4 class="text-sm font-semibold text-text mb-1">{{ $br['title'] }}</h4>
-                    <p class="text-xs text-muted line-clamp-2 mb-3">{{ $br['description'] }}</p>
+                    <p class="text-sm text-muted line-clamp-2 mb-3">{{ $br['description'] }}</p>
 
-                    <div class="text-xs text-muted mb-3">
+                    <div class="text-sm text-muted mb-3">
                         {{ $br['start'] }} &mdash; {{ $br['end'] }}
                     </div>
 
                     {{-- Progress --}}
                     <div class="mb-3">
-                        <div class="flex items-center justify-between text-xs text-muted mb-1">
+                        <div class="flex items-center justify-between text-sm text-muted mb-1">
                             <span>Progress</span>
                             <span>{{ $br['progress'] }}%</span>
                         </div>
@@ -131,7 +131,7 @@
 
                     {{-- Footer --}}
                     <div class="mt-auto pt-3 border-t border-border flex items-center justify-between">
-                        <span class="text-xs text-muted">{{ $br['roadmap_count'] }} roadmap items</span>
+                        <span class="text-sm text-muted">{{ $br['roadmap_count'] }} roadmap items</span>
                         <button
                             @click="roadmapOpen = true; selectedBigRock = {{ json_encode($br) }}"
                             class="text-sm text-primary font-medium hover:underline"
@@ -163,7 +163,7 @@
                 <div class="p-5 border-b border-border flex items-center justify-between sticky top-0 bg-surface z-10">
                     <div>
                         <h3 class="font-semibold text-text">Roadmap Items</h3>
-                        <p class="text-xs text-muted" x-text="selectedBigRock?.title"></p>
+                        <p class="text-sm text-muted" x-text="selectedBigRock?.title"></p>
                     </div>
                     <button @click="roadmapOpen = false" class="text-muted hover:text-text">&times;</button>
                 </div>
@@ -172,7 +172,7 @@
                         <template x-if="(selectedBigRock?.roadmaps || []).length === 0">
                             <div class="rounded-xl border border-border bg-app-bg px-4 py-3">
                                 <p class="text-sm font-semibold text-text">Belum ada roadmap item</p>
-                                <p class="text-xs text-muted mt-1">Roadmap item untuk big rock ini akan muncul di sini.</p>
+                                <p class="text-sm text-muted mt-1">Roadmap item untuk big rock ini akan muncul di sini.</p>
                             </div>
                         </template>
 

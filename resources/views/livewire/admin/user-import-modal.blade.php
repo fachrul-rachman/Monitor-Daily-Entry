@@ -48,7 +48,7 @@
             >
                 <svg class="w-10 h-10 text-muted mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                 <p class="text-sm text-text font-medium">Drag & drop file di sini</p>
-                <p class="text-xs text-muted mt-1">atau</p>
+                <p class="text-sm text-muted mt-1">atau</p>
                 <label class="mt-2 btn-secondary inline-flex cursor-pointer">
                     Pilih File
                     <input
@@ -59,15 +59,15 @@
                         @change="fileSelected = true"
                     >
                 </label>
-                <p class="text-xs text-muted mt-2">Format: .xlsx, .xls, .csv</p>
+                <p class="text-sm text-muted mt-2">Format: .xlsx, .xls, .csv</p>
                 @if($file)
-                    <p class="text-xs text-success mt-2">
+                    <p class="text-sm text-success mt-2">
                         File dipilih: <span class="font-medium">{{ $file->getClientOriginalName() }}</span>
                     </p>
                 @else
-                    <p class="text-xs text-muted mt-2">Belum ada file yang dipilih.</p>
+                    <p class="text-sm text-muted mt-2">Belum ada file yang dipilih.</p>
                 @endif
-                @error('file') <p class="text-xs text-danger mt-2">{{ $message }}</p> @enderror
+                @error('file') <p class="text-sm text-danger mt-2">{{ $message }}</p> @enderror
             </div>
 
             <div class="mt-4 flex gap-3">
@@ -96,21 +96,21 @@
             <div class="flex gap-3 mb-4">
                 <div class="flex-1 bg-app-bg rounded-lg p-3 text-center">
                     <p class="text-lg font-bold text-text">{{ $totalRows }}</p>
-                    <p class="text-xs text-muted">Total Baris</p>
+                    <p class="text-sm text-muted">Total Baris</p>
                 </div>
                 <div class="flex-1 bg-success-bg rounded-lg p-3 text-center">
                     <p class="text-lg font-bold text-success">{{ $validRows }}</p>
-                    <p class="text-xs text-muted">Valid</p>
+                    <p class="text-sm text-muted">Valid</p>
                 </div>
                 <div class="flex-1 bg-danger-bg rounded-lg p-3 text-center">
                     <p class="text-lg font-bold text-danger">{{ $invalidRows }}</p>
-                    <p class="text-xs text-muted">Invalid</p>
+                    <p class="text-sm text-muted">Invalid</p>
                 </div>
             </div>
 
             {{-- Preview table --}}
             <div class="overflow-x-auto rounded-lg border border-border mb-4 max-h-60 overflow-y-auto">
-                <table class="w-full text-xs">
+                <table class="w-full text-sm">
                     <thead class="bg-app-bg sticky top-0">
                         <tr>
                             <th class="text-left px-3 py-2 font-semibold text-muted">Row</th>
@@ -140,7 +140,7 @@
                             @if(!$row['valid'] && $row['reason'])
                                 <tr class="bg-danger-bg/30">
                                     <td></td>
-                                    <td colspan="5" class="px-3 py-1.5 text-xs text-danger">⚠ {{ $row['reason'] }}</td>
+                                    <td colspan="5" class="px-3 py-1.5 text-sm text-danger">⚠ {{ $row['reason'] }}</td>
                                 </tr>
                             @endif
                         @endforeach

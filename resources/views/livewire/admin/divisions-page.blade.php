@@ -30,11 +30,11 @@
             <table class="w-full text-sm">
                 <thead>
                     <tr class="bg-app-bg border-b border-border">
-                        <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Nama Divisi</th>
-                        <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Status</th>
-                        <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Jumlah User</th>
-                        <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Dibuat</th>
-                        <th class="text-right px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Aksi</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Nama Divisi</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Status</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Jumlah User</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Dibuat</th>
+                        <th class="text-right px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-border">
@@ -49,7 +49,7 @@
                             <td class="px-4 py-3.5 text-right">
                                 <div class="flex items-center justify-end gap-2">
                                     <button class="text-sm text-primary font-medium hover:underline" wire:click="openEdit({{ $div->id }})">Edit</button>
-                                    <button class="text-sm text-warning font-medium hover:underline" wire:click="archive({{ $div->id }})">Arsipkan</button>
+                                    <button class="text-sm text-warning font-medium hover:underline" wire:click="archive({{ $div->id }})" wire:confirm="Yakin ingin mengarsipkan divisi ini? Aksi ini tidak bisa dibatalkan.">Arsipkan</button>
                                 </div>
                             </td>
                         </tr>
@@ -70,13 +70,13 @@
                 <div class="flex items-start justify-between">
                     <div>
                         <p class="font-semibold text-text">{{ $div->name }}</p>
-                        <p class="text-xs text-muted mt-0.5">{{ $div->users_count }} user · {{ optional($div->created_at)->format('d M Y') }}</p>
+                        <p class="text-sm text-muted mt-0.5">{{ $div->users_count }} user · {{ optional($div->created_at)->format('d M Y') }}</p>
                     </div>
                     <x-ui.status-badge :status="$div->status ?? 'active'" />
                 </div>
                 <div class="mt-3 pt-3 border-t border-border flex gap-2">
                     <button class="text-sm text-primary font-medium" wire:click="openEdit({{ $div->id }})">Edit</button>
-                    <button class="text-sm text-warning font-medium ml-auto" wire:click="archive({{ $div->id }})">Arsipkan</button>
+                    <button class="text-sm text-warning font-medium ml-auto" wire:click="archive({{ $div->id }})" wire:confirm="Yakin ingin mengarsipkan divisi ini? Aksi ini tidak bisa dibatalkan.">Arsipkan</button>
                 </div>
             </x-ui.card>
         @empty

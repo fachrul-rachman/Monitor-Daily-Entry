@@ -184,7 +184,7 @@
                 <p class="text-3xl font-bold text-{{ $healthColor }}">{{ $healthScore }}</p>
                 <span class="text-sm font-medium text-{{ $healthColor }}">{{ $healthLabel }}</span>
             </div>
-            <p class="text-xs text-muted mt-1">dari 100</p>
+            <p class="text-sm text-muted mt-1">dari 100</p>
         </x-ui.card>
 
         <x-ui.summary-card
@@ -252,7 +252,7 @@
                                class="text-sm font-medium text-text hover:text-primary">
                                 {{ $div['name'] }}
                             </a>
-                            <p class="text-xs text-muted">Health: {{ $div['health'] }}/100</p>
+                            <p class="text-sm text-muted">Health: {{ $div['health'] }}/100</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
@@ -277,7 +277,7 @@
                         <p class="text-sm font-medium text-text">{{ $finding['title'] }}</p>
                         <x-ui.severity-badge :severity="$finding['severity']" />
                     </div>
-                    <p class="text-xs text-muted mt-1">{{ $finding['user'] }} &middot; {{ $finding['division'] }} &middot; {{ $finding['time'] }}</p>
+                    <p class="text-sm text-muted mt-1">{{ $finding['user'] }} &middot; {{ $finding['division'] }} &middot; {{ $finding['time'] }}</p>
                 </div>
             @endforeach
         </x-ui.card>

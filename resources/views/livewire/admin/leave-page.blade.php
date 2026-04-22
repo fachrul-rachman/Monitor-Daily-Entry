@@ -14,12 +14,12 @@
             <div class="w-40">
                 <label class="label">Dari</label>
                 <input type="date" class="input @error('from') input-error @enderror" wire:model.defer="from" />
-                @error('from') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                @error('from') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
             </div>
             <div class="w-40">
                 <label class="label">Sampai</label>
                 <input type="date" class="input @error('to') input-error @enderror" wire:model.defer="to" />
-                @error('to') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                @error('to') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
             </div>
             <div class="w-40">
                 <label class="label">Status</label>
@@ -141,15 +141,15 @@
                     <div class="flex items-start justify-between">
                         <div class="min-w-0">
                             <p class="font-semibold text-text truncate">{{ $leave['user'] }}</p>
-                            <p class="text-xs text-muted mt-0.5">{{ $leave['division'] }} · {{ $leave['type'] }}</p>
+                            <p class="text-sm text-muted mt-0.5">{{ $leave['division'] }} · {{ $leave['type'] }}</p>
                         </div>
                         <x-ui.status-badge :status="$leave['status']" />
                     </div>
                     <p class="text-sm text-muted mt-2">{{ $leave['date'] }}</p>
                     @if(!empty($leave['reason']))
-                        <p class="text-xs text-muted mt-1 line-clamp-2">{{ $leave['reason'] }}</p>
+                        <p class="text-sm text-muted mt-1 line-clamp-2">{{ $leave['reason'] }}</p>
                     @endif
-                    <div class="text-xs text-muted mt-2" wire:loading wire:target="openDetail({{ $leave['id'] }})">
+                    <div class="text-sm text-muted mt-2" wire:loading wire:target="openDetail({{ $leave['id'] }})">
                         Membuka detail…
                     </div>
                 </x-ui.card>
@@ -172,7 +172,7 @@
                 <div class="p-5 border-b border-border flex items-center justify-between sticky top-0 bg-surface z-10">
                     <div class="min-w-0">
                         <h3 class="font-semibold text-text truncate">Detail Permintaan</h3>
-                        <p class="text-xs text-muted mt-0.5">{{ $selected['submitted'] ?? '—' }}</p>
+                        <p class="text-sm text-muted mt-0.5">{{ $selected['submitted'] ?? '—' }}</p>
                     </div>
                     <button type="button" @click="$wire.closeDrawer()" class="text-muted hover:text-text">✕</button>
                 </div>
@@ -181,7 +181,7 @@
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <p class="text-base font-semibold text-text truncate">{{ $selected['user'] ?? '—' }}</p>
-                            <p class="text-xs text-muted mt-0.5">{{ $selected['division'] ?? '—' }} · {{ $selected['type'] ?? '—' }}</p>
+                            <p class="text-sm text-muted mt-0.5">{{ $selected['division'] ?? '—' }} · {{ $selected['type'] ?? '—' }}</p>
                         </div>
                         @if(!empty($selected['status']))
                             <x-ui.status-badge :status="$selected['status']" />
@@ -190,17 +190,17 @@
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <p class="text-xs text-muted">Tanggal</p>
+                            <p class="text-sm text-muted">Tanggal</p>
                             <p class="text-sm text-text">{{ $selected['date'] ?? '—' }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-muted">Status</p>
+                            <p class="text-sm text-muted">Status</p>
                             <p class="text-sm text-text">{{ $selected['status'] ?? '—' }}</p>
                         </div>
                     </div>
 
                     <div>
-                        <p class="text-xs text-muted mb-1">Alasan</p>
+                        <p class="text-sm text-muted mb-1">Alasan</p>
                         <p class="text-sm text-text whitespace-pre-line">{{ $selected['reason'] ?? '—' }}</p>
                     </div>
 
@@ -217,6 +217,7 @@
                             </button>
                             <button type="button" class="btn-danger flex-1"
                                 wire:click="rejectSelected"
+                                wire:confirm="Yakin ingin menolak permintaan cuti ini? Aksi ini tidak bisa dibatalkan."
                                 wire:target="rejectSelected"
                                 wire:loading.attr="disabled"
                             >
@@ -228,7 +229,7 @@
 
                     {{-- Audit trail --}}
                     <div class="pt-4 border-t border-border">
-                        <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Riwayat</p>
+                        <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-3">Riwayat</p>
                         <div class="space-y-3">
                             <div class="flex gap-3">
                                 <div class="flex flex-col items-center">
@@ -237,7 +238,7 @@
                                 </div>
                                 <div class="pb-3">
                                     <p class="text-sm font-medium text-text">Permintaan diajukan</p>
-                                    <p class="text-xs text-muted mt-0.5">{{ $selected['user'] ?? '' }} · {{ $selected['submitted'] ?? '' }}</p>
+                                    <p class="text-sm text-muted mt-0.5">{{ $selected['user'] ?? '' }} · {{ $selected['submitted'] ?? '' }}</p>
                                 </div>
                             </div>
 
@@ -248,7 +249,7 @@
                                     </div>
                                     <div>
                                         <p class="text-sm font-medium text-text">Disetujui</p>
-                                        <p class="text-xs text-muted mt-0.5">{{ $selected['approved_by'] }} · {{ $selected['approved_at'] }}</p>
+                                        <p class="text-sm text-muted mt-0.5">{{ $selected['approved_by'] }} · {{ $selected['approved_at'] }}</p>
                                     </div>
                                 </div>
                             @endif
@@ -260,7 +261,7 @@
                                     </div>
                                     <div>
                                         <p class="text-sm font-medium text-text">Ditolak</p>
-                                        <p class="text-xs text-muted mt-0.5">{{ $selected['rejected_by'] }} · {{ $selected['rejected_at'] }}</p>
+                                        <p class="text-sm text-muted mt-0.5">{{ $selected['rejected_by'] }} · {{ $selected['rejected_at'] }}</p>
                                     </div>
                                 </div>
                             @endif
@@ -271,4 +272,3 @@
         </div>
     </div>
 </div>
-

@@ -182,7 +182,7 @@
                     <div class="flex items-center justify-between">
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-medium text-text truncate">{{ $item['title'] }}</p>
-                            <div class="flex flex-wrap items-center gap-1.5 text-xs mt-1">
+                            <div class="flex flex-wrap items-center gap-1.5 text-sm mt-1">
                                 <span class="badge-primary">{{ $item['big_rock'] }}</span>
                                 <svg class="w-3 h-3 text-muted shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                                 <span class="badge-muted">{{ $item['roadmap'] }}</span>
@@ -206,9 +206,9 @@
                     <div class="flex items-start justify-between">
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-medium text-text truncate">{{ $entry['title'] }}</p>
-                            <p class="text-xs text-muted mt-0.5">{{ $entry['date'] }}</p>
+                            <p class="text-sm text-muted mt-0.5">{{ $entry['date'] }}</p>
                         </div>
-                        <div class="flex items-center gap-2 shrink-0 text-xs">
+                        <div class="flex items-center gap-2 shrink-0 text-sm">
                             <span class="text-muted">P:</span> <x-ui.status-badge :status="$entry['plan']" />
                             <span class="text-muted ml-1">R:</span> <x-ui.status-badge :status="$entry['real']" />
                         </div>

@@ -28,6 +28,6 @@ $borderClass = match($border) {
     <p class="text-sm text-muted font-medium">{{ $label }}</p>
     <p class="text-2xl font-bold text-text mt-1">{{ $value }}</p>
     @if($context)
-        <p class="text-xs text-muted mt-1">{{ $context }}</p>
+        <p class="text-sm text-muted mt-1">{{ $context }}</p>
     @endif
 </div>

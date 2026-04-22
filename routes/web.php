@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-// Landing — Role Switcher (preview)
-Route::view('/', 'preview.role-switcher')->name('home');
+// Landing page
+Route::view('/', 'welcome')->name('home');
 
 // Dashboard hub — redirect based on authenticated user's role
 Route::middleware('auth')->get('/dashboard', function () {

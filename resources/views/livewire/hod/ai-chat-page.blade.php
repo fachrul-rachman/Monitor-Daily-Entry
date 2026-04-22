@@ -35,7 +35,7 @@
                 </div>
                 <div>
                     <p class="text-sm font-semibold text-text">Dayta AI</p>
-                    <p class="text-xs text-muted">Fokus: divisi Anda</p>
+                    <p class="text-sm text-muted">Fokus: divisi Anda</p>
                 </div>
             </div>
 
@@ -48,7 +48,7 @@
                             wire:click="sendSuggested(@js($prompt))"
                             wire:target="sendSuggested"
                             wire:loading.attr="disabled"
-                            class="shrink-0 px-3 py-1.5 text-xs text-primary bg-primary-light border border-primary/20 rounded-full hover:bg-primary/10 transition-colors whitespace-nowrap"
+                            class="shrink-0 px-3 py-1.5 text-sm text-primary bg-primary-light border border-primary/20 rounded-full hover:bg-primary/10 transition-colors whitespace-nowrap"
                         >
                             {{ \Illuminate\Support\Str::limit($prompt, 40) }}
                         </button>
@@ -108,9 +108,8 @@
                         </svg>
                     </button>
                 </form>
-                <p class="text-xs text-muted mt-2 text-center">Dayta AI membantu menganalisis data divisi. Hasil bersifat pendukung keputusan.</p>
+                <p class="text-sm text-muted mt-2 text-center">Dayta AI membantu menganalisis data divisi. Hasil bersifat pendukung keputusan.</p>
             </div>
         </x-ui.card>
     </div>
 </div>
-

@@ -243,7 +243,7 @@
                         <p class="text-sm font-medium text-text">{{ $finding['title'] }}</p>
                         <x-ui.severity-badge :severity="$finding['severity']" />
                     </div>
-                    <p class="text-xs text-muted mt-1">{{ $finding['user'] }} &middot; {{ $finding['division'] }} &middot; {{ $finding['date'] }}</p>
+                    <p class="text-sm text-muted mt-1">{{ $finding['user'] }} &middot; {{ $finding['division'] }} &middot; {{ $finding['date'] }}</p>
                 </div>
             @endforeach
         </x-ui.card>
@@ -260,7 +260,7 @@
                     <div class="w-full h-2 bg-app-bg rounded-full overflow-hidden">
                         <div class="h-full bg-primary rounded-full" style="width: {{ $dc['percentage'] }}%"></div>
                     </div>
-                    <p class="text-xs text-muted mt-1">{{ $dc['percentage'] }}% dari total</p>
+                    <p class="text-sm text-muted mt-1">{{ $dc['percentage'] }}% dari total</p>
                 </div>
             @endforeach
         </x-ui.card>

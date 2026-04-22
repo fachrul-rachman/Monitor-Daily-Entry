@@ -17,14 +17,14 @@
                             @endforeach
                         </select>
                         @if(count($divisionOptions) === 1)
-                            <p class="text-xs text-muted mt-1">Anda hanya memegang 1 divisi.</p>
+                            <p class="text-sm text-muted mt-1">Anda hanya memegang 1 divisi.</p>
                         @endif
                     </div>
                 @endif
                 <div class="w-40">
                     <label class="label">Tanggal</label>
                     <input type="date" class="input @error('date') input-error @enderror" wire:model.defer="date" />
-                    @error('date') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
+                    @error('date') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div class="w-52">
                     <label class="label">User</label>
@@ -50,7 +50,7 @@
         </label>
 
         @if($isWeekend)
-            <span class="text-xs text-muted">Catatan: Hari ini weekend, data bisa kosong.</span>
+            <span class="text-sm text-muted">Catatan: Hari ini weekend, data bisa kosong.</span>
         @endif
     </div>
 
@@ -61,13 +61,13 @@
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="bg-app-bg border-b border-border">
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">User</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Judul Plan</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Big Rock</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Plan</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Realisasi</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Temuan</th>
-                            <th class="text-right px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Detail</th>
+                            <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">User</th>
+                            <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Judul Plan</th>
+                            <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Big Rock</th>
+                            <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Plan</th>
+                            <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Realisasi</th>
+                            <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Temuan</th>
+                            <th class="text-right px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Detail</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-border">
@@ -82,10 +82,10 @@
                                     @if($row['severity'])
                                         <div class="flex items-center gap-2">
                                             <x-ui.severity-badge :severity="$row['severity']" />
-                                            <span class="text-xs text-muted">{{ $row['finding_count'] }}x</span>
+                                            <span class="text-sm text-muted">{{ $row['finding_count'] }}x</span>
                                         </div>
                                     @else
-                                        <span class="text-xs text-muted">-</span>
+                                        <span class="text-sm text-muted">-</span>
                                     @endif
                                 </td>
                                 <td class="px-4 py-3.5 text-right">
@@ -120,19 +120,19 @@
                     <div class="flex items-start justify-between gap-2">
                         <div class="min-w-0">
                             <p class="text-sm font-semibold text-text truncate">{{ $row['title'] }}</p>
-                            <p class="text-xs text-muted mt-1">{{ $row['user'] }} · {{ $row['date'] }}</p>
+                            <p class="text-sm text-muted mt-1">{{ $row['user'] }} · {{ $row['date'] }}</p>
                         </div>
                         @if($row['severity'])
                             <x-ui.severity-badge :severity="$row['severity']" />
                         @endif
                     </div>
 
-                    <div class="flex flex-wrap gap-1.5 text-xs mt-2">
+                    <div class="flex flex-wrap gap-1.5 text-sm mt-2">
                         <span class="badge-primary">{{ $row['big_rock'] }}</span>
                         <span class="badge-muted">{{ $row['roadmap'] }}</span>
                     </div>
 
-                    <div class="flex gap-3 mt-2 text-xs">
+                    <div class="flex gap-3 mt-2 text-sm">
                         <span class="text-muted">Plan:</span> <x-ui.status-badge :status="$row['plan_status']" />
                         <span class="text-muted ml-2">Real:</span> <x-ui.status-badge :status="$row['realization_status']" />
                     </div>
@@ -165,7 +165,7 @@
                 <div class="p-5 border-b border-border flex items-center justify-between sticky top-0 bg-surface z-10">
                     <div>
                         <h3 class="font-semibold text-text">Detail Entry</h3>
-                        <p class="text-xs text-muted mt-0.5">{{ $selected['user'] ?? '-' }} · {{ $selected['date'] ?? '-' }}</p>
+                        <p class="text-sm text-muted mt-0.5">{{ $selected['user'] ?? '-' }} · {{ $selected['date'] ?? '-' }}</p>
                     </div>
                     <button type="button" wire:click="closeDrawer" class="btn-secondary px-4">Tutup</button>
                 </div>
@@ -173,23 +173,23 @@
                 <div class="p-5 space-y-5">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <p class="text-xs text-muted">Plan Status</p>
+                            <p class="text-sm text-muted">Plan Status</p>
                             <x-ui.status-badge :status="$selected['plan_status'] ?? 'missing'" />
                             @if(!empty($selected['plan_submitted_at']))
-                                <p class="text-xs text-muted mt-1">Submit: {{ $selected['plan_submitted_at'] }}</p>
+                                <p class="text-sm text-muted mt-1">Submit: {{ $selected['plan_submitted_at'] }}</p>
                             @endif
                         </div>
                         <div>
-                            <p class="text-xs text-muted">Realisasi Status</p>
+                            <p class="text-sm text-muted">Realisasi Status</p>
                             <x-ui.status-badge :status="$selected['realization_status'] ?? 'missing'" />
                             @if(!empty($selected['realization_submitted_at']))
-                                <p class="text-xs text-muted mt-1">Submit: {{ $selected['realization_submitted_at'] }}</p>
+                                <p class="text-sm text-muted mt-1">Submit: {{ $selected['realization_submitted_at'] }}</p>
                             @endif
                         </div>
                     </div>
 
                     <div class="space-y-2">
-                        <p class="text-xs font-semibold text-muted uppercase tracking-wide">Temuan</p>
+                        <p class="text-sm font-semibold text-muted uppercase tracking-wide">Temuan</p>
                         @if(empty($selectedFindings) && (($selected['plan_status'] ?? '') !== 'missing') && (($selected['realization_status'] ?? '') !== 'missing'))
                             <p class="text-sm text-muted">Tidak ada temuan di tanggal ini.</p>
                         @else
@@ -201,7 +201,7 @@
                                             <x-ui.severity-badge :severity="$f['severity']" />
                                         </div>
                                         @if(!empty($f['description']))
-                                            <p class="text-xs text-muted mt-1 whitespace-pre-line">{{ $f['description'] }}</p>
+                                            <p class="text-sm text-muted mt-1 whitespace-pre-line">{{ $f['description'] }}</p>
                                         @endif
                                     </div>
                                 @endforeach
@@ -209,7 +209,7 @@
                                 @if(($selected['plan_status'] ?? '') === 'missing' || ($selected['realization_status'] ?? '') === 'missing')
                                     <div class="p-3 rounded-xl border border-danger/20 bg-danger-bg/15">
                                         <p class="text-sm text-danger font-medium">Laporan harian tidak lengkap (missing)</p>
-                                        <p class="text-xs text-muted mt-1">Plan atau realisasi belum terisi di hari ini.</p>
+                                        <p class="text-sm text-muted mt-1">Plan atau realisasi belum terisi di hari ini.</p>
                                     </div>
                                 @endif
                             </div>
@@ -217,7 +217,7 @@
                     </div>
 
                     <div class="space-y-2">
-                        <p class="text-xs font-semibold text-muted uppercase tracking-wide">Item Plan & Realisasi</p>
+                        <p class="text-sm font-semibold text-muted uppercase tracking-wide">Item Plan & Realisasi</p>
                         @if(empty($selectedItems))
                             <p class="text-sm text-muted">Tidak ada item plan (atau entry belum dibuat).</p>
                         @else
@@ -229,7 +229,7 @@
                                             <x-ui.status-badge :status="$it['realization_status']" />
                                         </div>
 
-                                        <div class="flex flex-wrap items-center gap-1.5 text-xs mt-1.5">
+                                        <div class="flex flex-wrap items-center gap-1.5 text-sm mt-1.5">
                                             <span class="badge-primary">{{ $it['big_rock'] }}</span>
                                             <svg class="w-3 h-3 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                                             <span class="badge-muted">{{ $it['roadmap'] }}</span>
@@ -237,30 +237,30 @@
 
                                         <div class="mt-3 space-y-2">
                                             <div>
-                                                <p class="text-xs font-semibold text-muted uppercase tracking-wide">Deskripsi Rencana</p>
+                                                <p class="text-sm font-semibold text-muted uppercase tracking-wide">Deskripsi Rencana</p>
                                                 <p class="text-sm text-text whitespace-pre-line">{{ $it['plan_text'] ?: '-' }}</p>
                                             </div>
                                             @if(!empty($it['plan_relation_reason']))
                                                 <div class="rounded-xl border border-border bg-app-bg px-4 py-3">
-                                                    <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-1">Alasan Terkait Big Rock</p>
+                                                    <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-1">Alasan Terkait Big Rock</p>
                                                     <p class="text-sm text-text whitespace-pre-line">{{ $it['plan_relation_reason'] }}</p>
                                                 </div>
                                             @endif
                                         </div>
 
                                         <div class="mt-3 space-y-2">
-                                            <p class="text-xs font-semibold text-muted uppercase tracking-wide">Realisasi</p>
+                                            <p class="text-sm font-semibold text-muted uppercase tracking-wide">Realisasi</p>
                                             <p class="text-sm text-text whitespace-pre-line">{{ $it['realization_text'] ?: 'Belum ada isi realisasi.' }}</p>
                                             @if(!empty($it['realization_reason']))
                                                 <div class="rounded-xl border border-border bg-app-bg px-4 py-3">
-                                                    <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-1">Alasan / Kendala</p>
+                                                    <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-1">Alasan / Kendala</p>
                                                     <p class="text-sm text-text whitespace-pre-line">{{ $it['realization_reason'] }}</p>
                                                 </div>
                                             @endif
                                         </div>
 
                                         <div class="mt-3 space-y-2">
-                                            <p class="text-xs font-semibold text-muted uppercase tracking-wide">Lampiran</p>
+                                            <p class="text-sm font-semibold text-muted uppercase tracking-wide">Lampiran</p>
                                             @if(empty($it['attachments']))
                                                 <p class="text-sm text-muted">Tidak ada lampiran.</p>
                                             @else
@@ -269,14 +269,14 @@
                                                         <div class="flex items-start justify-between gap-3 p-3 rounded-xl border border-border">
                                                             <div class="min-w-0">
                                                                 <p class="text-sm font-medium text-text truncate">{{ $a['name'] }}</p>
-                                                                <p class="text-xs text-muted mt-0.5">
+                                                                <p class="text-sm text-muted mt-0.5">
                                                                     @if($a['size_kb']) {{ $a['size_kb'] }} KB @else - @endif
                                                                 </p>
                                                             </div>
                                                             @if(!empty($a['url']))
                                                                 <a href="{{ $a['url'] }}" target="_blank" class="btn-secondary px-4">Buka</a>
                                                             @else
-                                                                <span class="text-xs text-muted">-</span>
+                                                                <span class="text-sm text-muted">-</span>
                                                             @endif
                                                         </div>
                                                     @endforeach

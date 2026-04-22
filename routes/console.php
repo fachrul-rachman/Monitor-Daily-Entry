@@ -38,3 +38,15 @@ Artisan::command('dayta:send-discord-daily-summary {--date=}', function () {
         $this->error('FAILED: '.$e->getMessage());
     }
 })->purpose('Send Discord daily findings summary (medium/high) for Director');
+
+Artisan::command('dayta:sync-holidays {year?}', function () {
+    $yearArg = $this->argument('year');
+    $year = $yearArg ? (int) $yearArg : (int) Carbon::now()->format('Y');
+
+    try {
+        $count = app(\App\Services\HolidaysSyncService::class)->syncIndonesiaPublicHolidays($year);
+        $this->info("OK: holidays synced for {$year} ({$count} dates saved).");
+    } catch (\Throwable $e) {
+        $this->error('FAILED: '.$e->getMessage());
+    }
+})->purpose('Sync Indonesia public holidays (joint holidays excluded)');

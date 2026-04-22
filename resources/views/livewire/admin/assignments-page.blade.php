@@ -46,7 +46,7 @@
                 </select>
             </div>
             <div class="flex items-end">
-                <p class="text-xs text-muted">
+                <p class="text-sm text-muted">
                     Tip: satu divisi hanya bisa punya 1 HoD.
                 </p>
             </div>
@@ -59,10 +59,10 @@
             <table class="w-full text-sm">
                 <thead>
                 <tr class="bg-app-bg border-b border-border">
-                    <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">HoD</th>
-                    <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Email</th>
-                    <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Divisi</th>
-                    <th class="text-right px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Aksi</th>
+                    <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">HoD</th>
+                    <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Email</th>
+                    <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Divisi</th>
+                    <th class="text-right px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Aksi</th>
                 </tr>
                 </thead>
                 <tbody class="divide-y divide-border">

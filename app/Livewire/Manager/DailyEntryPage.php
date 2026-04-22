@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Manager;
 
+use App\Jobs\ComputeUserMetrics;
 use App\Models\BigRock;
 use App\Models\DailyEntry;
 use App\Models\DailyEntryItem;
@@ -433,6 +434,8 @@ class DailyEntryPage extends Component
 
         $this->planFormOpen = true;
         $this->openPlanCard = $this->editingItemId ? (string) $this->editingItemId : ($this->openPlanCard ?: 'new');
+
+        ComputeUserMetrics::dispatch(auth()->user());
     }
 
     public function saveRealization(): void
@@ -518,6 +521,8 @@ class DailyEntryPage extends Component
         $this->loadItems($entry);
         $this->loadRealizationFromSelectedItem();
         $this->computeWindowStates($now, $setting);
+
+        ComputeUserMetrics::dispatch(auth()->user());
     }
 
     public function render()

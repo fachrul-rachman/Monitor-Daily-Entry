@@ -41,7 +41,7 @@
         <nav class="flex-1 overflow-y-auto py-4">
             {{-- TODO: Ganti navigasi berdasarkan auth()->user()->role --}}
             {{-- Dummy nav — Admin --}}
-            <p class="px-4 py-2 text-xs uppercase tracking-widest text-sidebar-section">Menu Utama</p>
+            <p class="px-4 py-2 text-sm uppercase tracking-widest text-sidebar-section">Menu Utama</p>
 
             <a href="#" class="flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg text-sm bg-sidebar-active-bg text-sidebar-active-text">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
@@ -58,7 +58,7 @@
                 Divisi
             </a>
 
-            <p class="px-4 py-2 mt-4 text-xs uppercase tracking-widest text-sidebar-section">Kelola</p>
+            <p class="px-4 py-2 mt-4 text-sm uppercase tracking-widest text-sidebar-section">Kelola</p>
 
             <a href="#" class="flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg text-sm text-sidebar-text hover:bg-white/5">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
@@ -95,11 +95,11 @@
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-white truncate">Admin User</p>
-                    <p class="text-xs text-sidebar-text truncate">Admin · Sistem</p>
+                    <p class="text-sm text-sidebar-text truncate">Admin · Sistem</p>
                 </div>
             </div>
             {{-- TODO: Ganti dengan form POST logout --}}
-            <button class="mt-3 text-xs text-sidebar-section hover:text-white transition-colors cursor-pointer">
+            <button class="mt-3 text-sm text-sidebar-section hover:text-white transition-colors cursor-pointer">
                 Logout
             </button>
         </div>

@@ -54,7 +54,7 @@
                 />
                 {{-- TODO: Ganti dengan wire:model.defer="email" --}}
                 @error('email')
-                    <p class="text-xs text-danger mt-1">{{ $message }}</p>
+                    <p class="text-sm text-danger mt-1">{{ $message }}</p>
                 @enderror
             </div>
 
@@ -87,7 +87,7 @@
                     </button>
                 </div>
                 @error('password')
-                    <p class="text-xs text-danger mt-1">{{ $message }}</p>
+                    <p class="text-sm text-danger mt-1">{{ $message }}</p>
                 @enderror
             </div>
 

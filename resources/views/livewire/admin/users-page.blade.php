@@ -117,13 +117,13 @@
             <table class="w-full text-sm">
                 <thead>
                     <tr class="bg-app-bg border-b border-border">
-                        <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Nama</th>
-                        <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Email</th>
-                        <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Role</th>
-                        <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Divisi</th>
-                        <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Status</th>
-                        <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Dibuat</th>
-                        <th class="text-right px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">Aksi</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Nama</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Email</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Role</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Divisi</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Status</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Dibuat</th>
+                        <th class="text-right px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-border">
@@ -167,7 +167,7 @@
                     </div>
                     <x-ui.status-badge :status="$user->status ?? 'active'" />
                 </div>
-                <div class="mt-2 flex items-center gap-2 text-xs text-muted">
+                <div class="mt-2 flex items-center gap-2 text-sm text-muted">
                     <span>{{ $roles[$user->role] ?? ucfirst($user->role) }}</span>
                     <span>&middot;</span>
                     <span>{{ $user->division?->name ?? '-' }}</span>
