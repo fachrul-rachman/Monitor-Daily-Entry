@@ -10,6 +10,8 @@ use Illuminate\Support\Str;
 
 class DiscordDailySummaryService
 {
+    private const RETRY_COOLDOWN_MINUTES = 10;
+
     public function sendIfDue(?Carbon $now = null): void
     {
         $now = $now ?: Carbon::now();
@@ -33,14 +35,30 @@ class DiscordDailySummaryService
 
         $date = $now->toDateString();
 
-        // Dedupe: jangan kirim 2x di tanggal yang sama.
-        $already = NotificationLog::query()
+        $log = NotificationLog::query()
             ->where('channel', 'discord')
             ->where('type', 'daily_summary')
             ->whereDate('context_date', $date)
-            ->exists();
+            ->first();
 
-        if ($already) {
+        // Dedupe: kalau sudah sukses / sudah diputuskan skip, stop.
+        if ($log && in_array($log->status, ['sent', 'skipped'], true)) {
+            return;
+        }
+
+        // Kalau sebelumnya gagal, retry tapi jangan terlalu sering.
+        if ($log && $log->status === 'failed') {
+            $lastAttempt = $log->failed_at ?? $log->updated_at;
+            if ($lastAttempt) {
+                $minutes = Carbon::parse($lastAttempt)->diffInMinutes($now);
+                if ($minutes < self::RETRY_COOLDOWN_MINUTES) {
+                    return;
+                }
+            }
+        }
+
+        // Jika sedang pending (mis. overlap), biarkan run lain yang menyelesaikan.
+        if ($log && $log->status === 'pending') {
             return;
         }
 
@@ -72,16 +90,23 @@ class DiscordDailySummaryService
 
         // Kalau tidak ada temuan medium/high: tidak kirim.
         if ($findings->isEmpty()) {
-            NotificationLog::query()->create([
-                'channel' => 'discord',
-                'type' => 'daily_summary',
-                'context_date' => $day,
-                'status' => 'skipped',
-                'summary' => 'Tidak ada temuan medium/high hari ini.',
-                'payload' => [
-                    'counts' => ['high' => 0, 'medium' => 0],
+            NotificationLog::query()->updateOrCreate(
+                [
+                    'channel' => 'discord',
+                    'type' => 'daily_summary',
+                    'context_date' => $day,
                 ],
-            ]);
+                [
+                    'status' => 'skipped',
+                    'summary' => 'Tidak ada temuan medium/high hari ini.',
+                    'payload' => [
+                        'counts' => ['high' => 0, 'medium' => 0],
+                    ],
+                    'error_message' => null,
+                    'sent_at' => null,
+                    'failed_at' => null,
+                ],
+            );
 
             return;
         }
@@ -117,21 +142,33 @@ class DiscordDailySummaryService
             'content' => $content,
         ];
 
-        $log = NotificationLog::query()->create([
-            'channel' => 'discord',
-            'type' => 'daily_summary',
-            'context_date' => $day,
-            'status' => 'sent',
-            'summary' => "Daily findings summary ({$highCount} high, {$mediumCount} medium)",
-            'payload' => [
-                'counts' => ['high' => $highCount, 'medium' => $mediumCount],
-                'finding_ids' => $findings->take($maxItems)->pluck('id')->all(),
+        $log = NotificationLog::query()->updateOrCreate(
+            [
+                'channel' => 'discord',
+                'type' => 'daily_summary',
+                'context_date' => $day,
             ],
-            'sent_at' => now(),
-        ]);
+            [
+                'status' => 'pending',
+                'summary' => "Daily findings summary ({$highCount} high, {$mediumCount} medium)",
+                'payload' => [
+                    'counts' => ['high' => $highCount, 'medium' => $mediumCount],
+                    'finding_ids' => $findings->take($maxItems)->pluck('id')->all(),
+                ],
+                'error_message' => null,
+                'sent_at' => null,
+                'failed_at' => null,
+            ],
+        );
 
         try {
             app(DiscordWebhookClient::class)->send($webhook, $payload);
+
+            $log->status = 'sent';
+            $log->sent_at = now();
+            $log->failed_at = null;
+            $log->error_message = null;
+            $log->save();
         } catch (\Throwable $e) {
             $log->status = 'failed';
             $log->error_message = $e->getMessage();
@@ -142,4 +179,3 @@ class DiscordDailySummaryService
         }
     }
 }
-

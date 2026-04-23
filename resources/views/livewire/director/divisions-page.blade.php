@@ -17,11 +17,8 @@
             $selectedDivision = (int) ($divisions[0]['id'] ?? 0);
         }
 
-        $latestScoreDate = \App\Models\HealthScore::query()
-            ->where('scope_type', 'division')
-            ->max('score_date');
-
-        $defaultTo = $latestScoreDate ? \Illuminate\Support\Carbon::parse($latestScoreDate) : \Illuminate\Support\Carbon::yesterday();
+        $today = \Illuminate\Support\Carbon::today();
+        $defaultTo = $today->copy();
         $defaultFrom = $defaultTo->copy()->subDays(7);
 
         $periodFrom = $defaultFrom;
@@ -32,6 +29,10 @@
         } catch (\Throwable $e) {
             $periodFrom = $defaultFrom;
             $periodTo = $defaultTo;
+        }
+
+        if ($periodTo->gt($today)) {
+            $periodTo = $today->copy();
         }
 
         if ($periodFrom->gt($periodTo)) {
@@ -91,8 +92,9 @@
             ->limit(10)
             ->get();
 
-        $userNameById = \App\Models\User::query()->whereIn('id', $findingByUser->pluck('user_id')->all())->pluck('name', 'id')->all();
-        $userRoleById = \App\Models\User::query()->whereIn('id', $findingByUser->pluck('user_id')->all())->pluck('role', 'id')->all();
+        $peopleUserIds = $findingByUser->pluck('user_id')->filter()->values()->all();
+        $userNameById = \App\Models\User::query()->whereIn('id', $peopleUserIds)->pluck('name', 'id')->all();
+        $userRoleById = \App\Models\User::query()->whereIn('id', $peopleUserIds)->pluck('role', 'id')->all();
 
         $userMaxSeverity = \App\Models\Finding::query()
             ->whereBetween('finding_date', [$periodFrom->toDateString(), $periodTo->toDateString()])
@@ -103,18 +105,117 @@
             ->pluck('sev', 'user_id')
             ->all();
 
-        $peopleWithFindings = $findingByUser->map(function ($row) use ($userNameById, $userRoleById, $userMaxSeverity) {
+        $latestByUserId = \App\Models\Finding::query()
+            ->whereBetween('finding_date', [$periodFrom->toDateString(), $periodTo->toDateString()])
+            ->whereIn('severity', ['medium', 'high'])
+            ->where('division_id', $selectedDivision)
+            ->whereIn('user_id', $peopleUserIds)
+            ->orderByDesc('finding_date')
+            ->orderByDesc('id')
+            ->get(['id', 'user_id', 'finding_date', 'type', 'severity', 'title'])
+            ->groupBy('user_id')
+            ->map(fn ($rows) => $rows->take(8)->map(function ($r) {
+                return [
+                    'id' => (int) $r->id,
+                    'title' => (string) $r->title,
+                    'date' => \Illuminate\Support\Carbon::parse($r->finding_date)->translatedFormat('j M Y'),
+                    'rule' => strtoupper((string) $r->type),
+                    'severity' => $r->severity === 'high' ? 'major' : ($r->severity === 'medium' ? 'medium' : 'minor'),
+                ];
+            })->values()->all())
+            ->all();
+
+        $peopleWithFindings = $findingByUser->map(function ($row) use ($userNameById, $userRoleById, $userMaxSeverity, $latestByUserId) {
             $sev = (int) ($userMaxSeverity[$row->user_id] ?? 0);
             $severity = $sev >= 2 ? 'major' : ($sev === 1 ? 'medium' : 'minor');
             $role = ($userRoleById[$row->user_id] ?? 'manager') === 'hod' ? 'HoD' : 'Manager';
 
             return [
+                'type' => 'person',
+                'user_id' => (int) $row->user_id,
                 'name' => $userNameById[$row->user_id] ?? '—',
                 'role' => $role,
                 'findings' => (int) $row->total,
                 'severity' => $severity,
+                'latest_findings' => $latestByUserId[(int) $row->user_id] ?? [],
             ];
         })->all();
+
+        $setting = \App\Models\ReportSetting::current();
+
+        $toTimeText = function ($value): ?string {
+            if (! $value) {
+                return null;
+            }
+
+            try {
+                return \Illuminate\Support\Carbon::parse($value)->translatedFormat('j M Y, H:i');
+            } catch (\Throwable) {
+                return null;
+            }
+        };
+
+        $buildEntryChain = function (?int $userId, ?string $date) use ($setting, $toTimeText): array {
+            if (! $userId || ! $date) {
+                return [];
+            }
+
+            $entry = \App\Models\DailyEntry::query()
+                ->with([
+                    'items.bigRock:id,title',
+                    'items.roadmapItem:id,title,status',
+                ])
+                ->where('user_id', $userId)
+                ->whereDate('entry_date', $date)
+                ->first(['id', 'user_id', 'entry_date', 'plan_status', 'realization_status', 'plan_submitted_at', 'realization_submitted_at', 'plan_title', 'plan_text', 'realization_text', 'realization_reason']);
+
+            $window = [
+                'plan' => $setting ? sprintf('%s–%s', (string) $setting->plan_open_time, (string) $setting->plan_close_time) : null,
+                'realization' => $setting ? sprintf('%s–%s', (string) $setting->realization_open_time, (string) $setting->realization_close_time) : null,
+            ];
+
+            if (! $entry) {
+                return [
+                    'big_rock' => null,
+                    'roadmap' => null,
+                    'plan' => null,
+                    'realization' => null,
+                    'timestamps' => [
+                        'plan_submitted_at' => null,
+                        'realization_submitted_at' => null,
+                        'window' => $window,
+                    ],
+                ];
+            }
+
+            $items = $entry->items ?? collect();
+            $pick = $items->firstWhere('roadmap_item_id', '!=', null)
+                ?? $items->firstWhere('big_rock_id', '!=', null)
+                ?? $items->first();
+
+            $bigRockTitle = $pick?->bigRock?->title ?? null;
+            $roadmapTitle = $pick?->roadmapItem?->title ?? null;
+            $roadmapStatus = $pick?->roadmapItem?->status ?? null;
+
+            $planTitle = $pick?->plan_title ?: ($entry->plan_title ?: null);
+            $planText = $pick?->plan_text ?: ($entry->plan_text ?: null);
+
+            $realStatus = $pick?->realization_status ?: null;
+            $realText = $pick?->realization_text ?: ($entry->realization_text ?: null);
+            $realReason = $pick?->realization_reason ?: ($entry->realization_reason ?: null);
+
+            return [
+                'big_rock' => $bigRockTitle ? ['title' => (string) $bigRockTitle] : null,
+                'roadmap' => $roadmapTitle ? ['title' => (string) $roadmapTitle, 'status' => $roadmapStatus ?: null] : null,
+                'plan' => ($planTitle || $planText) ? ['title' => $planTitle ?: '—', 'text' => $planText ?: '', 'status' => $entry->plan_status ?: null] : null,
+                'realization' => ($realStatus || $realText || $realReason) ? ['status' => $realStatus ?: ($entry->realization_status ?: null), 'text' => $realText ?: '', 'reason' => $realReason ?: ''] : null,
+                'timestamps' => [
+                    'plan_submitted_at' => $toTimeText($entry->plan_submitted_at?->toDateTimeString()),
+                    'realization_submitted_at' => $toTimeText($entry->realization_submitted_at?->toDateTimeString()),
+                    'window' => $window,
+                ],
+            ];
+        };
 
         $latestMajorFindings = \App\Models\Finding::query()
             ->with(['user:id,name'])
@@ -125,15 +226,20 @@
             ->orderByDesc('id')
             ->limit(10)
             ->get()
-            ->map(function ($f) {
+            ->map(function ($f) use ($buildEntryChain) {
                 $severity = $f->severity === 'high' ? 'major' : ($f->severity === 'medium' ? 'medium' : 'minor');
                 return [
+                    'type' => 'finding',
                     'id' => $f->id,
                     'title' => $f->title,
                     'user' => $f->user?->name ?? '—',
+                    'user_id' => $f->user_id ? (int) $f->user_id : null,
                     'severity' => $severity,
                     'rule' => strtoupper($f->type),
                     'date' => \Illuminate\Support\Carbon::parse($f->finding_date)->translatedFormat('j M Y'),
+                    'raw_date' => \Illuminate\Support\Carbon::parse($f->finding_date)->toDateString(),
+                    'description' => $f->description ?: '',
+                    'chain' => $buildEntryChain($f->user_id ? (int) $f->user_id : null, \Illuminate\Support\Carbon::parse($f->finding_date)->toDateString()),
                 ];
             })
             ->all();
@@ -227,7 +333,7 @@
                 <h3 class="text-sm font-semibold text-text mb-4">Orang dengan Temuan</h3>
                 @foreach($peopleWithFindings as $person)
                     <div class="flex items-center justify-between py-2.5 {{ !$loop->last ? 'border-b border-border' : '' }} cursor-pointer hover:bg-app-bg -mx-4 md:-mx-5 px-4 md:px-5 transition-colors"
-                        @click="drawerOpen = true; selectedFinding = { title: '{{ $person['name'] }}', type: 'person' }">
+                        @click="drawerOpen = true; selectedFinding = {{ json_encode($person) }}">
                         <div>
                             <p class="text-sm font-medium text-text">{{ $person['name'] }}</p>
                             <p class="text-sm text-muted">{{ $person['role'] }}</p>
@@ -284,52 +390,109 @@
                     <button @click="drawerOpen = false" class="text-muted hover:text-text">✕</button>
                 </div>
                 <div class="p-5">
-                    {{-- TODO: Include finding-detail-panel component --}}
-                    {{-- Hierarchy chain placeholder --}}
-                    <div class="space-y-4">
-                        <div class="bg-primary-light border border-primary/20 rounded-lg p-3">
-                            <p class="text-sm font-semibold text-primary uppercase tracking-wide">Big Rock</p>
-                            <p class="text-sm font-medium text-text mt-1">Optimasi Proses</p>
-                        </div>
-                        <div class="flex justify-center"><svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg></div>
-                        <div class="bg-app-bg border border-border rounded-lg p-3">
-                            <p class="text-sm font-semibold text-muted uppercase tracking-wide">Roadmap</p>
-                            <p class="text-sm font-medium text-text mt-1">Implementasi SOP Baru</p>
-                            <x-ui.status-badge status="in_progress" class="mt-1" />
-                        </div>
-                        <div class="flex justify-center"><svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg></div>
-                        <div class="bg-app-bg border border-border rounded-lg p-3">
-                            <p class="text-sm font-semibold text-muted uppercase tracking-wide">Plan</p>
-                            <p class="text-sm font-medium text-text mt-1">Review dokumen procurement</p>
-                            <p class="text-sm text-muted mt-1">Submitted: 7 Jul 2025, 08:30</p>
-                        </div>
-                        <div class="flex justify-center"><svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg></div>
-                        <div class="bg-app-bg border border-border rounded-lg p-3">
-                            <p class="text-sm font-semibold text-muted uppercase tracking-wide">Realization</p>
-                            <p class="text-sm font-medium text-text mt-1">Belum diisi</p>
-                            <x-ui.status-badge status="missing" class="mt-1" />
-                        </div>
+                    <template x-if="selectedFinding && selectedFinding.type === 'finding'">
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex items-start justify-between gap-2">
+                                    <p class="text-base font-semibold text-text" x-text="selectedFinding.title"></p>
+                                    <span class="text-xs font-semibold px-2 py-1 rounded bg-app-bg text-text" x-text="selectedFinding.rule"></span>
+                                </div>
+                                <p class="text-sm text-muted mt-1" x-text="`${selectedFinding.user} · ${selectedFinding.date}`"></p>
+                                <template x-if="selectedFinding.description">
+                                    <p class="text-sm text-text mt-2 whitespace-pre-line" x-text="selectedFinding.description"></p>
+                                </template>
+                            </div>
 
-                        {{-- Triggered Rules --}}
-                        <div class="mt-4 pt-4 border-t border-border">
-                            <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-3">Triggered Rules</p>
-                            <div class="space-y-2">
-                                <div class="flex items-start gap-2 bg-danger-bg rounded-lg p-3">
-                                    <x-ui.severity-badge severity="major" />
-                                    <p class="text-sm text-text">Missing submission > 2 hari berturut-turut</p>
+                            <template x-if="selectedFinding.chain && selectedFinding.chain.big_rock">
+                                <div class="bg-primary-light border border-primary/20 rounded-lg p-3">
+                                    <p class="text-sm font-semibold text-primary uppercase tracking-wide">Big Rock</p>
+                                    <p class="text-sm font-medium text-text mt-1" x-text="selectedFinding.chain.big_rock.title"></p>
+                                </div>
+                            </template>
+
+                            <template x-if="selectedFinding.chain && selectedFinding.chain.roadmap">
+                                <div class="bg-app-bg border border-border rounded-lg p-3">
+                                    <p class="text-sm font-semibold text-muted uppercase tracking-wide">Roadmap</p>
+                                    <p class="text-sm font-medium text-text mt-1" x-text="selectedFinding.chain.roadmap.title"></p>
+                                    <template x-if="selectedFinding.chain.roadmap.status">
+                                        <p class="text-sm text-muted mt-1" x-text="`Status: ${selectedFinding.chain.roadmap.status}`"></p>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <template x-if="selectedFinding.chain && selectedFinding.chain.plan">
+                                <div class="bg-app-bg border border-border rounded-lg p-3">
+                                    <p class="text-sm font-semibold text-muted uppercase tracking-wide">Plan</p>
+                                    <p class="text-sm font-medium text-text mt-1" x-text="selectedFinding.chain.plan.title"></p>
+                                    <template x-if="selectedFinding.chain.plan.text">
+                                        <p class="text-sm text-muted mt-1 whitespace-pre-line" x-text="selectedFinding.chain.plan.text"></p>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <template x-if="selectedFinding.chain && selectedFinding.chain.realization">
+                                <div class="bg-app-bg border border-border rounded-lg p-3">
+                                    <p class="text-sm font-semibold text-muted uppercase tracking-wide">Realization</p>
+                                    <template x-if="selectedFinding.chain.realization.status">
+                                        <p class="text-sm font-medium text-text mt-1" x-text="`Status: ${selectedFinding.chain.realization.status}`"></p>
+                                    </template>
+                                    <template x-if="selectedFinding.chain.realization.text">
+                                        <p class="text-sm text-muted mt-1 whitespace-pre-line" x-text="selectedFinding.chain.realization.text"></p>
+                                    </template>
+                                    <template x-if="selectedFinding.chain.realization.reason">
+                                        <p class="text-sm text-muted mt-1 whitespace-pre-line" x-text="`Reason: ${selectedFinding.chain.realization.reason}`"></p>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <div class="mt-4 pt-4 border-t border-border">
+                                <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-2">Timestamps</p>
+                                <div class="space-y-1 text-sm">
+                                    <template x-if="selectedFinding.chain && selectedFinding.chain.timestamps && selectedFinding.chain.timestamps.plan_submitted_at">
+                                        <p class="text-sm text-text" x-text="`Plan submitted: ${selectedFinding.chain.timestamps.plan_submitted_at}`"></p>
+                                    </template>
+                                    <template x-if="selectedFinding.chain && selectedFinding.chain.timestamps && selectedFinding.chain.timestamps.realization_submitted_at">
+                                        <p class="text-sm text-text" x-text="`Realization submitted: ${selectedFinding.chain.timestamps.realization_submitted_at}`"></p>
+                                    </template>
+                                    <template x-if="selectedFinding.chain && selectedFinding.chain.timestamps && selectedFinding.chain.timestamps.window && selectedFinding.chain.timestamps.window.plan">
+                                        <p class="text-sm text-muted" x-text="`Plan window: ${selectedFinding.chain.timestamps.window.plan}`"></p>
+                                    </template>
+                                    <template x-if="selectedFinding.chain && selectedFinding.chain.timestamps && selectedFinding.chain.timestamps.window && selectedFinding.chain.timestamps.window.realization">
+                                        <p class="text-sm text-muted" x-text="`Realization window: ${selectedFinding.chain.timestamps.window.realization}`"></p>
+                                    </template>
                                 </div>
                             </div>
                         </div>
+                    </template>
 
-                        {{-- Timestamps --}}
-                        <div class="mt-4 pt-4 border-t border-border">
-                            <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-2">Timestamps</p>
-                            <div class="grid grid-cols-2 gap-3 text-sm">
-                                <div><p class="text-sm text-muted">Submitted</p><p class="text-text">7 Jul 2025, 08:30</p></div>
-                                <div><p class="text-sm text-muted">Window</p><p class="text-text">08:00 – 17:00</p></div>
+                    <template x-if="selectedFinding && selectedFinding.type === 'person'">
+                        <div class="space-y-4">
+                            <div>
+                                <p class="text-base font-semibold text-text" x-text="selectedFinding.name"></p>
+                                <p class="text-sm text-muted mt-1" x-text="`${selectedFinding.role} · ${selectedFinding.findings} temuan`"></p>
+                            </div>
+
+                            <div class="border-t border-border pt-4">
+                                <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-3">Temuan Terbaru</p>
+                                <template x-if="selectedFinding.latest_findings && selectedFinding.latest_findings.length">
+                                    <div class="space-y-2">
+                                        <template x-for="f in selectedFinding.latest_findings" :key="f.id">
+                                            <div class="bg-app-bg border border-border rounded-lg p-3">
+                                                <div class="flex items-start justify-between gap-2">
+                                                    <p class="text-sm font-medium text-text" x-text="f.title"></p>
+                                                    <span class="text-xs font-semibold px-2 py-1 rounded bg-surface text-text" x-text="f.rule"></span>
+                                                </div>
+                                                <p class="text-sm text-muted mt-1" x-text="f.date"></p>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template x-if="!selectedFinding.latest_findings || !selectedFinding.latest_findings.length">
+                                    <p class="text-sm text-muted">Tidak ada data.</p>
+                                </template>
                             </div>
                         </div>
-                    </div>
+                    </template>
                 </div>
             </div>
         </div>

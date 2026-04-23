@@ -10,21 +10,21 @@
             ->where('scope_type', 'company')
             ->max('score_date');
 
+        $today = \Illuminate\Support\Carbon::today();
         $latestDate = $latestCompanyScoreDate ? \Illuminate\Support\Carbon::parse($latestCompanyScoreDate) : \Illuminate\Support\Carbon::yesterday();
 
         // Filter: gunakan query string (?from=YYYY-MM-DD&to=YYYY-MM-DD)
-        $periodTo = $latestDate;
-        $periodFrom = $latestDate->copy()->subDays(7);
+        $periodTo = $today->copy();
+        $periodFrom = $today->copy()->subDays(7);
         try {
             if (request('to')) $periodTo = \Illuminate\Support\Carbon::parse(request('to'));
             if (request('from')) $periodFrom = \Illuminate\Support\Carbon::parse(request('from'));
         } catch (\Throwable $e) {
-            $periodTo = $latestDate;
-            $periodFrom = $latestDate->copy()->subDays(7);
+            $periodTo = $today->copy();
+            $periodFrom = $today->copy()->subDays(7);
         }
 
-        // Jangan lewat dari tanggal metrics terakhir (biar chart tidak membingungkan).
-        if ($periodTo->gt($latestDate)) $periodTo = $latestDate->copy();
+        if ($periodTo->gt($today)) $periodTo = $today->copy();
         if ($periodFrom->gt($periodTo)) {
             [$periodFrom, $periodTo] = [$periodTo, $periodFrom];
         }

@@ -8,11 +8,8 @@
     @php
         $hod = auth()->user();
 
-        $latestScoreDate = \App\Models\HealthScore::query()
-            ->where('scope_type', 'division')
-            ->max('score_date');
-
-        $defaultTo = $latestScoreDate ? \Illuminate\Support\Carbon::parse($latestScoreDate) : \Illuminate\Support\Carbon::yesterday();
+        $today = \Illuminate\Support\Carbon::today();
+        $defaultTo = $today->copy();
         $defaultFrom = $defaultTo->copy()->subDays(7);
 
         $periodFrom = $defaultFrom;
@@ -23,6 +20,10 @@
         } catch (\Throwable $e) {
             $periodFrom = $defaultFrom;
             $periodTo = $defaultTo;
+        }
+
+        if ($periodTo->gt($today)) {
+            $periodTo = $today->copy();
         }
 
         if ($periodFrom->gt($periodTo)) {

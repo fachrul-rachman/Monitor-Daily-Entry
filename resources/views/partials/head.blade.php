@@ -5,9 +5,21 @@
     {{ filled($title ?? null) ? $title.' - '.config('app.name', 'Dayta') : config('app.name', 'Dayta') }}
 </title>
 
-<link rel="icon" href="/favicon.ico" sizes="any">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+@php
+    $faviconVersion = null;
+    try {
+        $faviconPath = public_path('favicon.ico');
+        $faviconVersion = is_file($faviconPath) ? filemtime($faviconPath) : null;
+    } catch (\Throwable $e) {
+        $faviconVersion = null;
+    }
+    $faviconQuery = $faviconVersion ? ('?v='.$faviconVersion) : '';
+@endphp
+
+<link rel="icon" href="/favicon.ico{{ $faviconQuery }}" sizes="any">
+<link rel="icon" href="/favicon.png{{ $faviconQuery }}" type="image/png" sizes="32x32">
+<link rel="icon" href="/favicon.svg{{ $faviconQuery }}" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png{{ $faviconQuery }}">
 
 {{-- Design System Fonts: DM Sans (heading) + Inter (body) --}}
 <link rel="preconnect" href="https://fonts.googleapis.com">
