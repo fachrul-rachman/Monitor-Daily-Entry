@@ -50,3 +50,62 @@ Artisan::command('dayta:sync-holidays {year?}', function () {
         $this->error('FAILED: '.$e->getMessage());
     }
 })->purpose('Sync Indonesia public holidays (joint holidays excluded)');
+
+Artisan::command('dayta:migrate-a-to-b
+    {--attachments-root= : Path folder lokal yang berisi daily_attachments/... (hasil download dari Apps A)}
+    {--report= : Path output laporan markdown}
+    {--db-a-host= : Host Postgres untuk db A}
+    {--db-a-port= : Port Postgres untuk db A}
+    {--db-a-database= : Nama database db A (contoh: daytaDb)}
+    {--db-a-username= : Username Postgres untuk db A}
+    {--db-a-password= : Password Postgres untuk db A}
+    {--dry-run : Cek koneksi + cek file attachment tanpa insert ke db B}
+', function () {
+    $attachmentsRoot = (string) ($this->option('attachments-root') ?? '');
+    if (trim($attachmentsRoot) === '') {
+        $this->error('attachments-root wajib diisi.');
+        return;
+    }
+
+    $dbAHost = (string) ($this->option('db-a-host') ?? env('DB_A_HOST', ''));
+    $dbAPort = (int) ($this->option('db-a-port') ?? env('DB_A_PORT', 0));
+    $dbADatabase = (string) ($this->option('db-a-database') ?? env('DB_A_DATABASE', ''));
+    $dbAUsername = (string) ($this->option('db-a-username') ?? env('DB_A_USERNAME', ''));
+    $dbAPassword = (string) ($this->option('db-a-password') ?? env('DB_A_PASSWORD', ''));
+
+    if (trim($dbAHost) === '' || $dbAPort <= 0 || trim($dbADatabase) === '' || trim($dbAUsername) === '' || trim($dbAPassword) === '') {
+        $this->error('Koneksi db A belum lengkap (host/port/database/username/password).');
+        return;
+    }
+
+    $reportPath = (string) ($this->option('report') ?? '');
+    if (trim($reportPath) === '') {
+        $reportPath = storage_path('app/private/migration-reports/dayta_migration_'.now()->format('Ymd_His').'.md');
+    }
+
+    $dryRun = (bool) $this->option('dry-run');
+
+    try {
+        $result = app(\App\Services\DaytaMigrationService::class)->migrate([
+            'attachments_root' => $attachmentsRoot,
+            'db_a' => [
+                'host' => $dbAHost,
+                'port' => $dbAPort,
+                'database' => $dbADatabase,
+                'username' => $dbAUsername,
+                'password' => $dbAPassword,
+            ],
+            'report_path' => $reportPath,
+            'preserve_item_ids' => true,
+            'default_relation_reason' => 'Migrasi data lama',
+            'map_real_only_plan_title_prefix' => '(Migrasi) ',
+            'dry_run' => $dryRun,
+        ]);
+
+        $this->info('OK: migration finished.');
+        $this->info('Report: '.$result['report_path']);
+    } catch (\Throwable $e) {
+        $this->error('FAILED: '.$e->getMessage());
+        $this->error('Report (partial): '.$reportPath);
+    }
+})->purpose('Migrate Apps A (db A) → Apps B (db B) + copy attachments (local)');
