@@ -378,8 +378,11 @@ class OverridePage extends Component
 
         if (! empty($this->newAttachments)) {
             foreach ($this->newAttachments as $upload) {
-                $path = $upload->store('daily-entry-attachments/'.$item->id.'/override-'.$now->format('YmdHis'));
-                
+                $path = $upload->store(
+                    'daily-entry-attachments/'.$item->id.'/override-'.$now->format('YmdHis'),
+                    'public'
+                );    
+                            
                 DailyEntryItemAttachment::query()->create([
                     'daily_entry_item_id' => $item->id,
                     'path' => $path,
