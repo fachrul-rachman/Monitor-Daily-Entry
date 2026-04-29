@@ -7,6 +7,22 @@
     <x-ui.page-header title="Big Rock" description="Kelola big rock dan roadmap item (punya Anda)">
         @if($canManageBigRock)
             <x-slot:actions>
+                <div class="flex items-center gap-2">
+                    <button
+                        type="button"
+                        class="{{ $view === 'active' ? 'btn-primary' : 'btn-secondary' }} px-4"
+                        wire:click="setView('active')"
+                        wire:target="setView"
+                        wire:loading.attr="disabled"
+                    >Aktif</button>
+                    <button
+                        type="button"
+                        class="{{ $view === 'archived' ? 'btn-primary' : 'btn-secondary' }} px-4"
+                        wire:click="setView('archived')"
+                        wire:target="setView"
+                        wire:loading.attr="disabled"
+                    >Arsip</button>
+                </div>
                 <button class="btn-primary gap-2" wire:click="openCreateBigRock" wire:target="openCreateBigRock" wire:loading.attr="disabled">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                     <span wire:loading.remove wire:target="openCreateBigRock">Tambah Big Rock</span>

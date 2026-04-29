@@ -67,7 +67,7 @@ class UserFormModal extends Component
         return [
             'name' => 'required|string|max:255',
             'email' => $emailRule,
-            'role' => 'required|string|in:admin,director,hod,manager',
+            'role' => 'required|string|in:admin,director,hod,manager,iso',
             'division' => 'nullable|string',
             'password' => $passwordRule,
             'isActive' => 'boolean',
@@ -112,6 +112,7 @@ class UserFormModal extends Component
             'director' => 'Director',
             'hod' => 'HoD',
             'manager' => 'Manager',
+            'iso' => 'ISO',
         ];
 
         return view('livewire.admin.user-form-modal', [
@@ -121,4 +122,3 @@ class UserFormModal extends Component
         ]);
     }
 }
-

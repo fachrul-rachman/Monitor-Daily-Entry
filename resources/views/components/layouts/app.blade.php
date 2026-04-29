@@ -198,16 +198,32 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                     Big Rock
                 </a>
+                <a href="{{ route('manager.leave') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'manager.leave' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-3-9a9 9 0 100 18 9 9 0 000-18z"/></svg>
+                    Cuti & Izin
+                </a>
+            @elseif($currentRole === 'iso')
+                {{-- ===== ISO SIDEBAR ===== --}}
+                <p class="px-4 py-2 text-sm uppercase tracking-widest text-sidebar-section">Monitoring</p>
+
+                <a href="{{ route('iso.monitor') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'iso.monitor' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3v18h18M7 14l3-3 3 2 5-6"/></svg>
+                    ISO Monitor
+                </a>
+                <a href="{{ route('iso.leave') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'iso.leave' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-3-9a9 9 0 100 18 9 9 0 000-18z"/></svg>
+                    Approval Cuti
+                </a>
             @endif
         </nav>
 
         {{-- User area --}}
         <div class="border-t border-white/10 p-4 shrink-0" x-data="{ userMenuOpen: false }" @click.outside="userMenuOpen = false" @keydown.escape.window="userMenuOpen = false">
             @php
-                $roleLabels = ['admin' => 'Admin', 'director' => 'Director', 'hod' => 'Head of Division', 'manager' => 'Manager'];
-                $roleNames = ['admin' => 'Admin User', 'director' => 'Direktur Utama', 'hod' => 'Budi Hartono', 'manager' => 'Rudi Santoso'];
-                $roleInitials = ['admin' => 'AD', 'director' => 'DU', 'hod' => 'BH', 'manager' => 'RS'];
-                $roleDivisions = ['admin' => 'Sistem', 'director' => 'Perusahaan', 'hod' => 'Divisi Operasional', 'manager' => 'Divisi Operasional'];
+                $roleLabels = ['admin' => 'Admin', 'director' => 'Director', 'hod' => 'Head of Division', 'manager' => 'Manager', 'iso' => 'ISO'];
+                $roleNames = ['admin' => 'Admin User', 'director' => 'Direktur Utama', 'hod' => 'Budi Hartono', 'manager' => 'Rudi Santoso', 'iso' => 'ISO User'];
+                $roleInitials = ['admin' => 'AD', 'director' => 'DU', 'hod' => 'BH', 'manager' => 'RS', 'iso' => 'ISO'];
+                $roleDivisions = ['admin' => 'Sistem', 'director' => 'Perusahaan', 'hod' => 'Divisi Operasional', 'manager' => 'Divisi Operasional', 'iso' => 'Audit'];
             @endphp
             @if(auth()->check())
                 <button type="button" @click="userMenuOpen = !userMenuOpen" class="w-full flex items-center gap-3 text-left rounded-lg hover:bg-white/5 transition-colors p-2 -m-2">

@@ -120,6 +120,35 @@
                         </div>
                     </div>
 
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <p class="text-sm text-muted">Durasi Plan</p>
+                            @php($mins = (int) ($selectedItem['plan_duration_minutes'] ?? 0))
+                            <p class="text-sm text-text">
+                                @if($mins > 0 && $mins % 60 === 0)
+                                    {{ (int) ($mins / 60) }} jam
+                                @elseif($mins > 0)
+                                    {{ $mins }} menit
+                                @else
+                                    —
+                                @endif
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-muted">Durasi Realisasi</p>
+                            @php($mins = (int) ($selectedItem['realization_duration_minutes'] ?? 0))
+                            <p class="text-sm text-text">
+                                @if($mins > 0 && $mins % 60 === 0)
+                                    {{ (int) ($mins / 60) }} jam
+                                @elseif($mins > 0)
+                                    {{ $mins }} menit
+                                @else
+                                    —
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+
                     <div class="space-y-2">
                         <p class="text-sm font-semibold text-muted uppercase tracking-wide">Rencana</p>
                         @if(!empty($selectedItem['plan_text']))

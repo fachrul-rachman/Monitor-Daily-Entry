@@ -91,7 +91,7 @@ class UserImportModal extends Component
 
         $this->totalRows = max(0, $highestRow - 1);
 
-        $knownRoles = ['admin', 'director', 'hod', 'manager'];
+        $knownRoles = ['admin', 'director', 'hod', 'manager', 'iso'];
         $divisionNames = Division::pluck('name')->map(fn ($name) => strtolower($name))->all();
 
         for ($row = 2; $row <= $highestRow; $row++) {

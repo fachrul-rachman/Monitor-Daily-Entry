@@ -16,9 +16,11 @@ class DailyEntryItem extends Model
         'plan_title',
         'plan_text',
         'plan_relation_reason',
+        'plan_duration_minutes',
         'realization_status',
         'realization_text',
         'realization_reason',
+        'realization_duration_minutes',
         'realization_attachment_path',
     ];
 

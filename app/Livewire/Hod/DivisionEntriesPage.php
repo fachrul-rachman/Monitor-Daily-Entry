@@ -386,9 +386,11 @@ class DivisionEntriesPage extends Component
                 'roadmap' => $item->roadmapItem?->title ?? '-',
                 'plan_text' => $item->plan_text ?: '',
                 'plan_relation_reason' => $item->plan_relation_reason ?: '',
+                'plan_duration_minutes' => $item->plan_duration_minutes !== null ? (int) $item->plan_duration_minutes : null,
                 'realization_status' => $item->realization_status ?: 'draft',
                 'realization_text' => $item->realization_text ?: '',
                 'realization_reason' => $item->realization_reason ?: '',
+                'realization_duration_minutes' => $item->realization_duration_minutes !== null ? (int) $item->realization_duration_minutes : null,
                 'attachments' => $attachments,
             ];
         })->all();

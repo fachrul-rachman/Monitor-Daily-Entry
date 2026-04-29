@@ -196,6 +196,27 @@
                         @error('planTitle') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
 
+                    {{-- Durasi Plan --}}
+                    <div>
+                        <label class="label">Durasi Plan <span class="text-danger">*</span></label>
+                        <div class="flex gap-2">
+                            <input
+                                type="number"
+                                min="1"
+                                class="input flex-1"
+                                wire:model.live="planDurationValue"
+                                @disabled($planWindowBefore)
+                            />
+                            <select class="input w-28" wire:model.live="planDurationUnit" @disabled($planWindowBefore)>
+                                <option value="hours">Jam</option>
+                                <option value="minutes">Menit</option>
+                            </select>
+                        </div>
+                        <p class="text-sm text-muted mt-1">Wajib diisi, maksimal 24 jam.</p>
+                        @error('planDurationValue') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
+                        @error('planDurationUnit') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
+                    </div>
+
                     {{-- Deskripsi Plan --}}
                     <div>
                         <label class="label">Deskripsi Rencana</label>
@@ -363,6 +384,31 @@
                             <option value="blocked">Blocked</option>
                         </select>
                         @error('realizationStatus') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- Durasi Realisasi --}}
+                    <div>
+                        <label class="label">Durasi Realisasi <span class="text-danger">*</span></label>
+                        <div class="flex gap-2">
+                            <input
+                                type="number"
+                                min="1"
+                                class="input flex-1"
+                                wire:model.live="realizationDurationValue"
+                                @disabled($realizationWindowBefore || empty($items) || ! $selectedItemId)
+                            />
+                            <select
+                                class="input w-28"
+                                wire:model.live="realizationDurationUnit"
+                                @disabled($realizationWindowBefore || empty($items) || ! $selectedItemId)
+                            >
+                                <option value="hours">Jam</option>
+                                <option value="minutes">Menit</option>
+                            </select>
+                        </div>
+                        <p class="text-sm text-muted mt-1">Default mengikuti durasi plan, bisa diubah.</p>
+                        @error('realizationDurationValue') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
+                        @error('realizationDurationUnit') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     {{-- Deskripsi Realisasi --}}

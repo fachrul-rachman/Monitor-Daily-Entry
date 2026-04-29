@@ -589,9 +589,11 @@ class DaytaMigrationService
                             'plan_title' => $planTitle,
                             'plan_text' => $planText,
                             'plan_relation_reason' => $this->pickRelationReason($it->notes, $opts['default_relation_reason']),
+                            'plan_duration_minutes' => $this->hoursToMinutes($it->planned_hours ?? null),
                             'realization_status' => 'done',
                             'realization_text' => $planText,
                             'realization_reason' => null,
+                            'realization_duration_minutes' => $this->hoursToMinutes($it->realized_hours ?? null),
                             'realization_attachment_path' => null,
                             'created_at' => $it->created_at,
                             'updated_at' => $it->updated_at,
@@ -625,9 +627,11 @@ class DaytaMigrationService
                             'plan_title' => $planTitle,
                             'plan_text' => (string) ($p->description ?: ''),
                             'plan_relation_reason' => $this->pickRelationReason($p->notes, $opts['default_relation_reason']),
+                            'plan_duration_minutes' => $this->hoursToMinutes($p->planned_hours ?? null),
                             'realization_status' => 'done',
                             'realization_text' => (string) ($r->description ?: ''),
                             'realization_reason' => null,
+                            'realization_duration_minutes' => $this->hoursToMinutes($r->realized_hours ?? null),
                             'realization_attachment_path' => null,
                             'created_at' => $p->created_at ?: $r->created_at,
                             'updated_at' => $r->updated_at ?: $p->updated_at,
@@ -653,9 +657,11 @@ class DaytaMigrationService
                             'plan_title' => $this->makeTitleFromText((string) $p->description),
                             'plan_text' => (string) ($p->description ?: ''),
                             'plan_relation_reason' => $this->pickRelationReason($p->notes, $opts['default_relation_reason']),
+                            'plan_duration_minutes' => $this->hoursToMinutes($p->planned_hours ?? null),
                             'realization_status' => 'draft',
                             'realization_text' => null,
                             'realization_reason' => null,
+                            'realization_duration_minutes' => null,
                             'realization_attachment_path' => null,
                             'created_at' => $p->created_at,
                             'updated_at' => $p->updated_at,
@@ -684,9 +690,11 @@ class DaytaMigrationService
                             'plan_title' => $title,
                             'plan_text' => $text,
                             'plan_relation_reason' => $opts['default_relation_reason'],
+                            'plan_duration_minutes' => $this->hoursToMinutes($r->planned_hours ?? null),
                             'realization_status' => 'done',
                             'realization_text' => $text,
                             'realization_reason' => null,
+                            'realization_duration_minutes' => $this->hoursToMinutes($r->realized_hours ?? null),
                             'realization_attachment_path' => null,
                             'created_at' => $r->created_at,
                             'updated_at' => $r->updated_at,
@@ -733,6 +741,25 @@ class DaytaMigrationService
         $firstLine = trim($firstLine);
         $firstLine = Str::limit($firstLine, 255, '');
         return $firstLine !== '' ? $firstLine : Str::limit($t, 255, '');
+    }
+
+    private function hoursToMinutes($hours): ?int
+    {
+        if ($hours === null) {
+            return null;
+        }
+
+        if (! is_numeric($hours)) {
+            return null;
+        }
+
+        $minutes = (int) round(((float) $hours) * 60);
+
+        if ($minutes <= 0) {
+            return null;
+        }
+
+        return min($minutes, 1440);
     }
 
     /**

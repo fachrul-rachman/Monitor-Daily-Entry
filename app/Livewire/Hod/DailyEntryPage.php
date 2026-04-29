@@ -53,6 +53,8 @@ class DailyEntryPage extends Component
     public string $planTitle = '';
     public string $planText = '';
     public string $planRelationReason = '';
+    public int $planDurationValue = 1;
+    public string $planDurationUnit = 'hours'; // minutes | hours
     public $bigRockId = null;
     public $roadmapItemId = null;
 
@@ -61,6 +63,8 @@ class DailyEntryPage extends Component
     public string $realizationStatus = 'done';
     public string $realizationText = '';
     public string $realizationReason = '';
+    public int $realizationDurationValue = 1;
+    public string $realizationDurationUnit = 'hours'; // minutes | hours
     public array $realizationAttachments = [];
     public ?string $currentAttachmentPath = null;
     public array $existingAttachments = [];
@@ -224,6 +228,8 @@ class DailyEntryPage extends Component
                     'big_rock' => $item->bigRock?->title,
                     'roadmap' => $item->roadmapItem?->title,
                     'status' => $item->realization_status,
+                    'plan_duration_minutes' => $item->plan_duration_minutes,
+                    'realization_duration_minutes' => $item->realization_duration_minutes,
                 ];
             })
             ->all();
@@ -251,6 +257,8 @@ class DailyEntryPage extends Component
         $this->planTitle = '';
         $this->planText = '';
         $this->planRelationReason = '';
+        $this->planDurationValue = 1;
+        $this->planDurationUnit = 'hours';
         $this->bigRockId = null;
         $this->roadmapItemId = null;
         $this->loadRoadmapItems();
@@ -274,6 +282,9 @@ class DailyEntryPage extends Component
         $this->planTitle = $item->plan_title;
         $this->planText = $item->plan_text ?? '';
         $this->planRelationReason = $item->plan_relation_reason ?? '';
+        [$value, $unit] = $this->splitMinutesToValueAndUnit($item->plan_duration_minutes);
+        $this->planDurationValue = $value;
+        $this->planDurationUnit = $unit;
     }
 
     public function closePlanForm(): void
@@ -333,6 +344,8 @@ class DailyEntryPage extends Component
             $this->realizationStatus = 'done';
             $this->realizationText = '';
             $this->realizationReason = '';
+            $this->realizationDurationValue = 1;
+            $this->realizationDurationUnit = 'hours';
             $this->currentAttachmentPath = null;
             $this->existingAttachments = [];
 
@@ -350,6 +363,10 @@ class DailyEntryPage extends Component
             : 'done';
         $this->realizationText = $item->realization_text ?? '';
         $this->realizationReason = $item->realization_reason ?? '';
+        $minutes = $item->realization_duration_minutes ?? $item->plan_duration_minutes;
+        [$value, $unit] = $this->splitMinutesToValueAndUnit($minutes);
+        $this->realizationDurationValue = $value;
+        $this->realizationDurationUnit = $unit;
         $this->currentAttachmentPath = $item->realization_attachment_path;
         $this->existingAttachments = $item->attachments()
             ->orderBy('id')
@@ -364,7 +381,15 @@ class DailyEntryPage extends Component
             'planTitle' => 'required|string|max:255',
             'bigRockId' => 'required|integer|exists:big_rocks,id',
             'planRelationReason' => 'required|string',
+            'planDurationValue' => 'required|integer|min:1',
+            'planDurationUnit' => 'required|string|in:minutes,hours',
         ]);
+
+        $planDurationMinutes = $this->durationToMinutes($this->planDurationValue, $this->planDurationUnit);
+        if ($planDurationMinutes <= 0 || $planDurationMinutes > 1440) {
+            $this->addError('planDurationValue', 'Durasi maksimal 24 jam.');
+            return;
+        }
 
         $user = auth()->user();
         $today = Carbon::today()->toDateString();
@@ -390,6 +415,7 @@ class DailyEntryPage extends Component
             'plan_title' => $this->planTitle,
             'plan_text' => $this->planText,
             'plan_relation_reason' => $this->planRelationReason,
+            'plan_duration_minutes' => $planDurationMinutes,
         ];
 
         if ($this->editingItemId && $now->gt($planClose)) {
@@ -434,6 +460,8 @@ class DailyEntryPage extends Component
             'realizationText' => 'nullable|string',
             'realizationAttachments' => 'nullable|array',
             'realizationAttachments.*' => 'file|max:51200',
+            'realizationDurationValue' => 'required|integer|min:1',
+            'realizationDurationUnit' => 'required|string|in:minutes,hours',
         ];
 
         if ($this->realizationStatus !== 'done') {
@@ -441,6 +469,12 @@ class DailyEntryPage extends Component
         }
 
         $this->validate($rules);
+
+        $realMinutes = $this->durationToMinutes($this->realizationDurationValue, $this->realizationDurationUnit);
+        if ($realMinutes <= 0 || $realMinutes > 1440) {
+            $this->addError('realizationDurationValue', 'Durasi maksimal 24 jam.');
+            return;
+        }
 
         if (! $this->selectedItemId) {
             return;
@@ -497,6 +531,7 @@ class DailyEntryPage extends Component
         $item->realization_status = $this->realizationStatus;
         $item->realization_text = $this->realizationText;
         $item->realization_reason = $this->realizationReason;
+        $item->realization_duration_minutes = $realMinutes;
         $item->save();
 
         $this->realizationAttachments = [];
@@ -522,5 +557,30 @@ class DailyEntryPage extends Component
             ->layout('components.layouts.app', [
                 'title' => 'Entry Harian',
             ]);
+    }
+
+    private function durationToMinutes(int $value, string $unit): int
+    {
+        $value = max(0, (int) $value);
+
+        return $unit === 'hours' ? ($value * 60) : $value;
+    }
+
+    /**
+     * @return array{0:int,1:string}
+     */
+    private function splitMinutesToValueAndUnit($minutes): array
+    {
+        $minutes = is_numeric($minutes) ? (int) $minutes : 0;
+
+        if ($minutes > 0 && $minutes % 60 === 0) {
+            return [max(1, (int) ($minutes / 60)), 'hours'];
+        }
+
+        if ($minutes > 0) {
+            return [$minutes, 'minutes'];
+        }
+
+        return [1, 'hours'];
     }
 }

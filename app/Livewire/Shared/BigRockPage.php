@@ -14,6 +14,10 @@ class BigRockPage extends Component
 {
     public bool $canManageBigRock = true;
 
+    // active | archived
+    #[\Livewire\Attributes\Url]
+    public string $view = 'active';
+
     /** @var array<int, array<string, mixed>> */
     public array $bigRocks = [];
 
@@ -53,6 +57,20 @@ class BigRockPage extends Component
     public function mount(): void
     {
         $this->canManageBigRock = in_array(auth()->user()?->role, ['manager', 'hod'], true);
+        if (! in_array($this->view, ['active', 'archived'], true)) {
+            $this->view = 'active';
+        }
+        $this->refreshBigRocks();
+    }
+
+    public function setView(string $view): void
+    {
+        if (! in_array($view, ['active', 'archived'], true)) {
+            return;
+        }
+
+        $this->view = $view;
+        $this->closeRoadmapDrawer();
         $this->refreshBigRocks();
     }
 
@@ -62,6 +80,8 @@ class BigRockPage extends Component
 
         $models = BigRock::query()
             ->where('user_id', $user->id)
+            ->when($this->view === 'active', fn ($q) => $q->where('status', '!=', 'archived'))
+            ->when($this->view === 'archived', fn ($q) => $q->where('status', '=', 'archived'))
             ->orderByRaw("case when status='active' then 0 when status='on_track' then 1 when status='at_risk' then 2 when status='completed' then 3 when status='archived' then 4 else 5 end")
             ->orderByDesc('start_date')
             ->orderByDesc('id')
@@ -187,6 +207,7 @@ class BigRockPage extends Component
 
         $bigRockModels = BigRock::query()
             ->whereIn('user_id', $managerIds)
+            ->where('status', '!=', 'archived')
             ->orderByRaw("case when status='active' then 0 when status='on_track' then 1 when status='at_risk' then 2 when status='completed' then 3 when status='archived' then 4 else 5 end")
             ->orderByDesc('start_date')
             ->orderByDesc('id')

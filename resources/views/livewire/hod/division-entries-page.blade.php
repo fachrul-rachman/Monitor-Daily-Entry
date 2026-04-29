@@ -237,6 +237,18 @@
 
                                         <div class="mt-3 space-y-2">
                                             <div>
+                                                <p class="text-sm text-muted">Durasi Plan:
+                                                    @php($mins = (int) ($it['plan_duration_minutes'] ?? 0))
+                                                    <span class="text-text">
+                                                        @if($mins > 0 && $mins % 60 === 0)
+                                                            {{ (int) ($mins / 60) }} jam
+                                                        @elseif($mins > 0)
+                                                            {{ $mins }} menit
+                                                        @else
+                                                            —
+                                                        @endif
+                                                    </span>
+                                                </p>
                                                 <p class="text-sm font-semibold text-muted uppercase tracking-wide">Deskripsi Rencana</p>
                                                 <p class="text-sm text-text whitespace-pre-line">{{ $it['plan_text'] ?: '-' }}</p>
                                             </div>
@@ -250,6 +262,18 @@
 
                                         <div class="mt-3 space-y-2">
                                             <p class="text-sm font-semibold text-muted uppercase tracking-wide">Realisasi</p>
+                                            <p class="text-sm text-muted">Durasi Realisasi:
+                                                @php($mins = (int) ($it['realization_duration_minutes'] ?? 0))
+                                                <span class="text-text">
+                                                    @if($mins > 0 && $mins % 60 === 0)
+                                                        {{ (int) ($mins / 60) }} jam
+                                                    @elseif($mins > 0)
+                                                        {{ $mins }} menit
+                                                    @else
+                                                        —
+                                                    @endif
+                                                </span>
+                                            </p>
                                             <p class="text-sm text-text whitespace-pre-line">{{ $it['realization_text'] ?: 'Belum ada isi realisasi.' }}</p>
                                             @if(!empty($it['realization_reason']))
                                                 <div class="rounded-xl border border-border bg-app-bg px-4 py-3">

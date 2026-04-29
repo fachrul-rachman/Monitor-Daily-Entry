@@ -1,5 +1,31 @@
 @props(['paginator'])
 
+@php
+    $prev = $paginator instanceof \Illuminate\Contracts\Pagination\Paginator ? $paginator->previousPageUrl() : null;
+    $next = $paginator instanceof \Illuminate\Contracts\Pagination\Paginator ? $paginator->nextPageUrl() : null;
+
+    $normalizeUrl = function ($u) {
+        if (! is_string($u) || $u === '') {
+            return null;
+        }
+
+        // Already absolute (http/https).
+        if (str_starts_with($u, 'http://') || str_starts_with($u, 'https://')) {
+            return $u;
+        }
+
+        // Ensure root-relative so browser doesn't append it to current path (e.g. /admin + admin/users).
+        if (! str_starts_with($u, '/')) {
+            $u = '/'.$u;
+        }
+
+        return $u;
+    };
+
+    $prevHref = $normalizeUrl($prev);
+    $nextHref = $normalizeUrl($next);
+@endphp
+
 <div>
     @if($paginator instanceof \Illuminate\Contracts\Pagination\Paginator && $paginator->hasPages())
         <div class="flex items-center justify-between gap-3 text-sm text-muted">
@@ -25,7 +51,7 @@
                     </span>
                 @else
                     <a
-                        href="{{ $paginator->previousPageUrl() }}"
+                        href="{{ $prevHref }}"
                         class="px-3 py-1.5 rounded-lg border border-border bg-surface hover:bg-app-bg text-text transition-colors"
                     >
                         Sebelumnya
@@ -35,7 +61,7 @@
                 {{-- Next --}}
                 @if($paginator->hasMorePages())
                     <a
-                        href="{{ $paginator->nextPageUrl() }}"
+                        href="{{ $nextHref }}"
                         class="px-3 py-1.5 rounded-lg border border-border bg-surface hover:bg-app-bg text-text transition-colors"
                     >
                         Selanjutnya

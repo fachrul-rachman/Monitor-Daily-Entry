@@ -21,6 +21,7 @@ Route::middleware('auth')->get('/dashboard', function () {
         'director' => redirect()->route('director.dashboard'),
         'hod' => redirect()->route('hod.dashboard'),
         'manager' => redirect()->route('manager.dashboard'),
+        'iso' => redirect()->route('iso.monitor'),
         default => abort(403),
     };
 })->name('dashboard');
@@ -73,7 +74,7 @@ Route::prefix('hod')
         Route::get('/history', \App\Livewire\Hod\HistoryPage::class)->name('history');
         Route::get('/big-rock', \App\Livewire\Shared\BigRockPage::class)->name('big-rock');
         Route::get('/security', \App\Livewire\Shared\ChangePasswordPage::class)->name('security');
-        Route::get('/leave', \App\Livewire\Admin\LeavePage::class)->name('leave');
+        Route::get('/leave', \App\Livewire\Hod\LeaveRequestPage::class)->name('leave');
         Route::get('/division-entries', \App\Livewire\Hod\DivisionEntriesPage::class)->name('division-entries');
         Route::get('/team-big-rock', \App\Livewire\Hod\TeamBigRockPage::class)->name('team-big-rock');
         Route::view('/division-summary', 'livewire.hod.division-summary-page')->name('division-summary');
@@ -89,6 +90,17 @@ Route::prefix('manager')
         Route::get('/daily-entry', \App\Livewire\Manager\DailyEntryPage::class)->name('daily-entry');
         Route::get('/history', \App\Livewire\Manager\HistoryPage::class)->name('history');
         Route::get('/big-rock', \App\Livewire\Shared\BigRockPage::class)->name('big-rock');
+        Route::get('/security', \App\Livewire\Shared\ChangePasswordPage::class)->name('security');
+        Route::get('/leave', \App\Livewire\Manager\LeaveRequestPage::class)->name('leave');
+    });
+
+// ============ ISO Routes ============
+Route::prefix('iso')
+    ->name('iso.')
+    ->middleware(['auth', 'role:iso'])
+    ->group(function () {
+        Route::get('/monitor', \App\Livewire\Iso\MonitorPage::class)->name('monitor');
+        Route::get('/leave', \App\Livewire\Iso\LeaveApprovalPage::class)->name('leave');
         Route::get('/security', \App\Livewire\Shared\ChangePasswordPage::class)->name('security');
     });
 

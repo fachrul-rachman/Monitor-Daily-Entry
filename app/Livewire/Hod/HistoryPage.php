@@ -108,12 +108,14 @@ class HistoryPage extends Component
             'title' => $item->plan_title ?: '—',
             'plan_text' => $item->plan_text ?: '',
             'plan_relation_reason' => $item->plan_relation_reason ?: '',
+            'plan_duration_minutes' => $item->plan_duration_minutes !== null ? (int) $item->plan_duration_minutes : null,
             'big_rock' => $item->bigRock?->title ?? '—',
             'roadmap' => $item->roadmapItem?->title ?? '—',
             'plan_status' => $item->entry?->plan_status ?: 'missing',
             'realization_status' => $item->entry?->realization_status ?: 'missing',
             'realization_text' => $item->realization_text ?: '',
             'realization_reason' => $item->realization_reason ?: '',
+            'realization_duration_minutes' => $item->realization_duration_minutes !== null ? (int) $item->realization_duration_minutes : null,
             'severity' => $severity,
         ];
 
@@ -220,4 +222,3 @@ class HistoryPage extends Component
         ]);
     }
 }
-
