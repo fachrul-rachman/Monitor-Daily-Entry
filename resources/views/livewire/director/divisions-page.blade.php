@@ -200,7 +200,7 @@
             $planTitle = $pick?->plan_title ?: ($entry->plan_title ?: null);
             $planText = $pick?->plan_text ?: ($entry->plan_text ?: null);
 
-            $realStatus = $pick?->realization_status ?: null;
+            $realStatus = ($pick?->realization_status && $pick?->realization_status !== 'draft') ? $pick->realization_status : null;
             $realText = $pick?->realization_text ?: ($entry->realization_text ?: null);
             $realReason = $pick?->realization_reason ?: ($entry->realization_reason ?: null);
 

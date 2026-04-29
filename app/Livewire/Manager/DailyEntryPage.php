@@ -117,6 +117,12 @@ class DailyEntryPage extends Component
 
         $this->storedPlanStatus = $entry->plan_status;
         $this->storedRealizationStatus = $entry->realization_status;
+        if ($this->storedPlanStatus === 'draft') {
+            $this->storedPlanStatus = null;
+        }
+        if ($this->storedRealizationStatus === 'draft') {
+            $this->storedRealizationStatus = null;
+        }
 
         $this->loadItems($entry);
         $this->loadRoadmapItems();

@@ -41,9 +41,6 @@
             ->whereDate('entry_date', $today->toDateString())
             ->first(['id', 'plan_status', 'realization_status']);
 
-        $planFilled = (bool) ($todayEntry && in_array($todayEntry->plan_status, ['submitted', 'late'], true));
-        $realizationFilled = (bool) ($todayEntry && in_array($todayEntry->realization_status, ['submitted', 'late'], true));
-
         $planTodayCount = $todayEntry
             ? \App\Models\DailyEntryItem::query()->where('daily_entry_id', $todayEntry->id)->count()
             : 0;
@@ -54,6 +51,10 @@
                 ->where('realization_status', 'draft')
                 ->count()
             : 0;
+
+        // Status banner: dianggap terisi jika sudah ada item (tanpa status draft).
+        $planFilled = (bool) ($todayEntry && $planTodayCount > 0);
+        $realizationFilled = (bool) ($todayEntry && $planTodayCount > 0 && $realizationPending === 0);
 
         $divisionManagers = \App\Models\User::query()
             ->whereIn('division_id', $assignedDivisionIds)

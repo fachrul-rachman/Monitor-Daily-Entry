@@ -5,12 +5,14 @@
 @props(['status'])
 
 @php
+$status = is_string($status) ? trim($status) : '';
+
 $map = [
     'active'      => ['label' => 'Aktif',            'class' => 'badge-success'],
     'inactive'    => ['label' => 'Non Aktif',         'class' => 'badge-danger'],
     'archived'    => ['label' => 'Diarsipkan',        'class' => 'badge-muted'],
     'submitted'   => ['label' => 'Submitted',         'class' => 'badge-primary'],
-    'draft'       => ['label' => 'Draft',             'class' => 'badge-warning'],
+    'draft'       => ['label' => 'Missing',           'class' => 'badge-danger'],
     'late'        => ['label' => 'Terlambat',         'class' => 'badge-danger'],
     'missing'     => ['label' => 'Missing',           'class' => 'badge-danger'],
     'pending'     => ['label' => 'Pending',           'class' => 'badge-warning'],
@@ -31,7 +33,9 @@ $map = [
     'not_started' => ['label' => 'Belum Mulai',       'class' => 'badge-muted'],
 ];
 
-$config = $map[$status] ?? ['label' => ucfirst($status), 'class' => 'badge-muted'];
+$config = $status === ''
+    ? ['label' => '—', 'class' => 'badge-muted']
+    : ($map[$status] ?? ['label' => ucfirst($status), 'class' => 'badge-muted']);
 @endphp
 
 <span {{ $attributes->merge(['class' => $config['class']]) }}>

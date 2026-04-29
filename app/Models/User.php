@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 use App\Models\Division;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
-#[Fillable(['name', 'email', 'password', 'role', 'division_id', 'status'])]
+#[Fillable(['name', 'email', 'password', 'role', 'division_id', 'status', 'discord_webhook_url'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {

@@ -138,6 +138,10 @@
                 </div>
 
                 <div class="p-5 space-y-6">
+                    <div class="flex items-center justify-end gap-3">
+                        <button type="button" class="text-sm text-primary hover:underline" wire:click="expandAll">Buka semua</button>
+                        <button type="button" class="text-sm text-muted hover:text-text" wire:click="collapseAll">Tutup semua</button>
+                    </div>
                     <div>
                         <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-2">Big Rock &amp; Roadmap</p>
                         @if(empty($selectedBigRocks))
@@ -148,28 +152,39 @@
                                     <div class="p-3 rounded-xl border border-border">
                                         <div class="flex items-start justify-between gap-3">
                                             <div class="min-w-0">
-                                                <p class="text-sm font-semibold text-text truncate">{{ $br['title'] }}</p>
+                                                <p class="text-sm font-semibold text-text whitespace-normal break-words">{{ $br['title'] }}</p>
                                                 <p class="text-sm text-muted mt-0.5">
                                                     {{ strtoupper($br['status'] ?? 'active') }} · {{ $br['start'] ?? '—' }} – {{ $br['end'] ?? '—' }} · Progress {{ $br['progress'] ?? 0 }}%
                                                 </p>
                                             </div>
-                                            <span class="badge-primary">{{ $br['progress'] ?? 0 }}%</span>
+                                            <div class="flex items-center gap-2 shrink-0">
+                                                <span class="badge-primary">{{ $br['progress'] ?? 0 }}%</span>
+                                                <button type="button" class="btn-secondary px-4" wire:click="toggleBigRock({{ (int) ($br['id'] ?? 0) }})">Detail</button>
+                                            </div>
                                         </div>
 
-                                        @if(!empty($br['description']))
-                                            <p class="text-sm text-text mt-2 whitespace-pre-line">{{ $br['description'] }}</p>
-                                        @endif
+                                        @if(in_array((int) ($br['id'] ?? 0), $openBigRockIds ?? [], true))
+                                            @if(!empty($br['description']))
+                                                <div class="mt-3 pt-3 border-t border-border">
+                                                    <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-2">Deskripsi</p>
+                                                    <p class="text-sm text-text whitespace-pre-line">{{ $br['description'] }}</p>
+                                                </div>
+                                            @endif
 
-                                        @if(empty($br['roadmaps']))
-                                            <p class="text-sm text-muted mt-2">Tidak ada roadmap.</p>
-                                        @else
-                                            <div class="mt-3 space-y-2">
-                                                @foreach($br['roadmaps'] as $rm)
-                                                    <div class="flex items-center justify-between gap-3 p-2 rounded-lg bg-app-bg border border-border">
-                                                        <p class="text-sm text-text whitespace-normal break-words">{{ $rm['title'] }}</p>
-                                                        <x-ui.status-badge :status="$rm['status']" />
+                                            <div class="mt-3 pt-3 border-t border-border">
+                                                <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-2">Roadmap</p>
+                                                @if(empty($br['roadmaps']))
+                                                    <p class="text-sm text-muted">Tidak ada roadmap.</p>
+                                                @else
+                                                    <div class="space-y-2">
+                                                        @foreach($br['roadmaps'] as $rm)
+                                                            <div class="flex items-center justify-between gap-3 p-2 rounded-lg bg-app-bg border border-border">
+                                                                <p class="text-sm text-text whitespace-normal break-words">{{ $rm['title'] }}</p>
+                                                                <x-ui.status-badge :status="$rm['status']" />
+                                                            </div>
+                                                        @endforeach
                                                     </div>
-                                                @endforeach
+                                                @endif
                                             </div>
                                         @endif
                                     </div>
@@ -178,6 +193,7 @@
                         @endif
                     </div>
 
+                    @if(false)
                     <div>
                         <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-2">Ringkas per hari</p>
                         @if(empty($selectedDays))
@@ -201,7 +217,152 @@
                             </div>
                         @endif
                     </div>
+                    @endif
 
+                    <div>
+                        <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-2">Item Planning</p>
+                        @if(empty($selectedPlanItems))
+                            <p class="text-sm text-muted">Tidak ada item planning.</p>
+                        @else
+                            <div class="space-y-2">
+                                @foreach($selectedPlanItems as $it)
+                                    @php($id = (int) ($it['id'] ?? 0))
+                                    <div class="p-3 rounded-xl border border-border">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div class="min-w-0">
+                                                <p class="text-sm font-medium text-text whitespace-normal break-words">{{ $it['title'] }}</p>
+                                                <p class="text-sm text-muted mt-0.5 whitespace-normal break-words">
+                                                    <span class="font-medium text-text">{{ $it['date'] }}</span><br>
+                                                    <span>Big Rock: {{ $it['big_rock'] }}</span><br>
+                                                    <span>Roadmap: {{ $it['roadmap'] }}</span>
+                                                </p>
+                                            </div>
+                                            <div class="flex items-center gap-2 shrink-0">
+                                                <x-ui.status-badge :status="$it['plan_status']" />
+                                                <button type="button" class="btn-secondary px-4" wire:click="togglePlanItem({{ $id }})">Detail</button>
+                                            </div>
+                                        </div>
+                                        <p class="text-sm text-muted mt-1">
+                                            Durasi:
+                                            @php($m=(int)($it['plan_minutes'] ?? 0))
+                                            @if($m > 0 && $m % 60 === 0) {{ (int)($m/60) }} jam @elseif($m > 0) {{ $m }} menit @else â€” @endif
+                                        </p>
+
+                                        @if(in_array($id, $openPlanItemIds ?? [], true))
+                                            <div class="mt-3 pt-3 border-t border-border space-y-3">
+                                                <div>
+                                                    <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-2">Deskripsi Planning</p>
+                                                    @if(trim((string)($it['plan_text'] ?? '')) !== '')
+                                                        <div class="rounded-xl border border-border bg-app-bg px-4 py-3">
+                                                            <p class="text-sm text-text whitespace-pre-line">{{ $it['plan_text'] }}</p>
+                                                        </div>
+                                                    @else
+                                                        <p class="text-sm text-muted">Tidak ada deskripsi.</p>
+                                                    @endif
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-2">Alasan Terkait Big Rock</p>
+                                                    @if(trim((string)($it['plan_relation_reason'] ?? '')) !== '')
+                                                        <div class="rounded-xl border border-border bg-app-bg px-4 py-3">
+                                                            <p class="text-sm text-text whitespace-pre-line">{{ $it['plan_relation_reason'] }}</p>
+                                                        </div>
+                                                    @else
+                                                        <p class="text-sm text-muted">â€”</p>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+
+                    <div>
+                        <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-2">Item Realisasi</p>
+                        @if(empty($selectedRealizationItems))
+                            <p class="text-sm text-muted">Tidak ada item realisasi.</p>
+                        @else
+                            <div class="space-y-2">
+                                @foreach($selectedRealizationItems as $it)
+                                    @php($id = (int) ($it['id'] ?? 0))
+                                    <div class="p-3 rounded-xl border border-border">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div class="min-w-0">
+                                                <p class="text-sm font-medium text-text whitespace-normal break-words">{{ $it['title'] }}</p>
+                                                <p class="text-sm text-muted mt-0.5 whitespace-normal break-words">
+                                                    <span class="font-medium text-text">{{ $it['date'] }}</span><br>
+                                                    <span>Big Rock: {{ $it['big_rock'] }}</span><br>
+                                                    <span>Roadmap: {{ $it['roadmap'] }}</span>
+                                                </p>
+                                            </div>
+                                            <div class="flex items-center gap-2 shrink-0">
+                                                <x-ui.status-badge :status="$it['real_status']" />
+                                                <button type="button" class="btn-secondary px-4" wire:click="toggleRealItem({{ $id }})">Detail</button>
+                                            </div>
+                                        </div>
+                                        <p class="text-sm text-muted mt-1">
+                                            Durasi:
+                                            @php($m=(int)($it['real_minutes'] ?? 0))
+                                            @if($m > 0 && $m % 60 === 0) {{ (int)($m/60) }} jam @elseif($m > 0) {{ $m }} menit @else â€” @endif
+                                        </p>
+
+                                        @if(in_array($id, $openRealItemIds ?? [], true))
+                                            <div class="mt-3 pt-3 border-t border-border space-y-3">
+                                                <div>
+                                                    <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-2">Deskripsi Realisasi</p>
+                                                    @if(trim((string)($it['realization_text'] ?? '')) !== '')
+                                                        <div class="rounded-xl border border-border bg-app-bg px-4 py-3">
+                                                            <p class="text-sm text-text whitespace-pre-line">{{ $it['realization_text'] }}</p>
+                                                        </div>
+                                                    @else
+                                                        <p class="text-sm text-muted">Tidak ada isi realisasi.</p>
+                                                    @endif
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-2">Alasan / Kendala</p>
+                                                    @if(trim((string)($it['realization_reason'] ?? '')) !== '')
+                                                        <div class="rounded-xl border border-border bg-app-bg px-4 py-3">
+                                                            <p class="text-sm text-text whitespace-pre-line">{{ $it['realization_reason'] }}</p>
+                                                        </div>
+                                                    @else
+                                                        <p class="text-sm text-muted">â€”</p>
+                                                    @endif
+                                                </div>
+
+                                                <div>
+                                                    <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-2">Lampiran</p>
+                                                    @if(empty($it['attachments']))
+                                                        <p class="text-sm text-muted">Tidak ada lampiran.</p>
+                                                    @else
+                                                        <div class="space-y-2">
+                                                            @foreach($it['attachments'] as $a)
+                                                                <div class="flex items-start justify-between gap-3 p-2 rounded-lg bg-app-bg border border-border">
+                                                                    <div class="min-w-0">
+                                                                        <p class="text-sm font-medium text-text break-words">{{ $a['name'] }}</p>
+                                                                        <p class="text-sm text-muted mt-0.5">
+                                                                            @if(!empty($a['size_kb'])) {{ $a['size_kb'] }} KB @else â€” @endif
+                                                                        </p>
+                                                                    </div>
+                                                                    @if(!empty($a['url']))
+                                                                        <a href="{{ $a['url'] }}" target="_blank" class="btn-secondary px-4">Buka</a>
+                                                                    @else
+                                                                        <span class="text-sm text-muted">â€”</span>
+                                                                    @endif
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+
+                    @if(false)
                     <div>
                         <p class="text-sm font-semibold text-muted uppercase tracking-wide mb-2">Item Plan/Realisasi</p>
                         @if(empty($selectedItems))
@@ -276,6 +437,7 @@
                             </div>
                         @endif
                     </div>
+                    @endif
                 </div>
             </div>
         </div>

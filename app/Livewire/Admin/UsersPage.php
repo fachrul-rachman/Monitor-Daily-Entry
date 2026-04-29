@@ -111,6 +111,7 @@ class UsersPage extends Component
             'director' => 'Director',
             'hod' => 'HoD',
             'manager' => 'Manager',
+            'iso' => 'ISO',
         ];
     }
 

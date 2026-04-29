@@ -117,6 +117,12 @@ class DailyEntryPage extends Component
 
         $this->storedPlanStatus = $entry->plan_status;
         $this->storedRealizationStatus = $entry->realization_status;
+        if ($this->storedPlanStatus === 'draft') {
+            $this->storedPlanStatus = null;
+        }
+        if ($this->storedRealizationStatus === 'draft') {
+            $this->storedRealizationStatus = null;
+        }
 
         $this->loadItems($entry);
         $this->loadRoadmapItems();
@@ -508,14 +514,18 @@ class DailyEntryPage extends Component
 
         if (! empty($this->realizationAttachments)) {
             foreach ($this->realizationAttachments as $upload) {
+                $originalName = $upload->getClientOriginalName();
+                $mimeType = $upload->getMimeType();
+                $size = $upload->getSize();
+
                 $path = $upload->store('daily-entry-attachments/'.$item->id);
 
                 DailyEntryItemAttachment::create([
                     'daily_entry_item_id' => $item->id,
                     'path' => $path,
-                    'original_name' => $upload->getClientOriginalName(),
-                    'mime_type' => $upload->getMimeType(),
-                    'size_bytes' => $upload->getSize(),
+                    'original_name' => $originalName,
+                    'mime_type' => $mimeType,
+                    'size_bytes' => $size,
                 ]);
             }
 

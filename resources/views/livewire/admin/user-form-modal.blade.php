@@ -67,6 +67,19 @@
                 @error('division') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
             </div>
 
+            {{-- Discord Webhook URL --}}
+            <div>
+                <label class="label">Discord Webhook URL (untuk user ini)</label>
+                <input
+                    type="text"
+                    class="input"
+                    placeholder="https://discord.com/api/webhooks/..."
+                    wire:model.live="discordWebhookUrl"
+                />
+                <p class="text-sm text-muted mt-1">Opsional. Jika kosong, sistem tidak mengirim pesan per-user (rekap utama tetap terkirim).</p>
+                @error('discordWebhookUrl') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
+            </div>
+
             {{-- Password --}}
             <div>
                 <label class="label">

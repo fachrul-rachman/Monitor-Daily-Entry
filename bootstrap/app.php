@@ -24,7 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // MVP: cek tiap menit, service akan kirim hanya jika sudah waktunya dan belum pernah terkirim hari itu.
         $schedule->command('dayta:send-discord-daily-summary')
-            ->everyMinute()
+            ->everyThirtyMinutes()
             ->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware): void {

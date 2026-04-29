@@ -6,6 +6,7 @@ use App\Models\DailyEntry;
 use App\Models\DailyEntryItem;
 use App\Models\DailyEntryItemAttachment;
 use App\Models\Finding;
+use App\Models\ReportSetting;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
@@ -23,6 +24,34 @@ class HistoryPage extends Component
 
     /** @var array<int, array<string, mixed>> */
     public array $selectedAttachments = [];
+
+    private function reportingStatus(?DailyEntry $entry, string $kind): string
+    {
+        if (! $entry || ! $entry->entry_date) {
+            return 'missing';
+        }
+
+        $setting = ReportSetting::current();
+        $date = Carbon::parse($entry->entry_date)->toDateString();
+        $closeTime = $kind === 'plan' ? $setting->plan_close_time : $setting->realization_close_time;
+        $submittedAt = $kind === 'plan' ? $entry->plan_submitted_at : $entry->realization_submitted_at;
+
+        if ($submittedAt) {
+            $close = Carbon::parse($date.' '.$closeTime);
+            return Carbon::parse($submittedAt)->gt($close) ? 'late' : 'submitted';
+        }
+
+        $isToday = $date === Carbon::today()->toDateString();
+        if ($isToday) {
+            $now = Carbon::now();
+            $close = Carbon::parse($date.' '.$closeTime);
+            if ($now->lte($close)) {
+                return '';
+            }
+        }
+
+        return 'missing';
+    }
 
     public function mount(): void
     {
@@ -111,8 +140,8 @@ class HistoryPage extends Component
             'plan_duration_minutes' => $item->plan_duration_minutes !== null ? (int) $item->plan_duration_minutes : null,
             'big_rock' => $item->bigRock?->title ?? '—',
             'roadmap' => $item->roadmapItem?->title ?? '—',
-            'plan_status' => $item->entry?->plan_status ?: 'missing',
-            'realization_status' => $item->entry?->realization_status ?: 'missing',
+            'plan_status' => $this->reportingStatus($item->entry, 'plan'),
+            'realization_status' => $this->reportingStatus($item->entry, 'real'),
             'realization_text' => $item->realization_text ?: '',
             'realization_reason' => $item->realization_reason ?: '',
             'realization_duration_minutes' => $item->realization_duration_minutes !== null ? (int) $item->realization_duration_minutes : null,
@@ -164,7 +193,7 @@ class HistoryPage extends Component
             ->where('user_id', $user->id)
             ->whereBetween('entry_date', [$from, $to])
             ->orderByDesc('entry_date')
-            ->get(['id', 'entry_date', 'plan_status', 'realization_status']);
+            ->get(['id', 'entry_date', 'plan_status', 'realization_status', 'plan_submitted_at', 'realization_submitted_at']);
 
         if ($entries->isEmpty()) {
             return [];
@@ -204,8 +233,8 @@ class HistoryPage extends Component
                 'title' => $item->plan_title,
                 'big_rock' => $item->bigRock?->title ?? '—',
                 'roadmap' => $item->roadmapItem?->title ?? '—',
-                'plan_status' => $entry->plan_status ?: 'missing',
-                'realization_status' => $entry->realization_status ?: 'missing',
+                'plan_status' => $this->reportingStatus($entry, 'plan'),
+                'realization_status' => $this->reportingStatus($entry, 'real'),
                 'severity' => $severity,
             ];
         }

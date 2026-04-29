@@ -20,24 +20,38 @@ Artisan::command('dayta:compute-metrics {--from=} {--to=}', function () {
     $this->info('OK: metrics computed.');
 })->purpose('Compute findings and health scores for a date range');
 
-Artisan::command('dayta:send-discord-daily-summary {--date=}', function () {
+Artisan::command('dayta:send-discord-daily-summary {--date=} {--kind=}', function () {
     $dateOpt = $this->option('date');
+    $kindOpt = (string) ($this->option('kind') ?? '');
 
     try {
         if ($dateOpt) {
             $date = Carbon::parse($dateOpt);
-            app(\App\Services\DiscordDailySummaryService::class)->sendForDate($date);
-            $this->info('OK: discord daily summary sent for '.$date->toDateString().'.');
+
+            $kind = $kindOpt !== '' ? $kindOpt : 'both';
+            if (! in_array($kind, ['plan', 'realization', 'both'], true)) {
+                $this->error('Invalid --kind. Use plan|realization|both.');
+                return;
+            }
+
+            if ($kind === 'both' || $kind === 'plan') {
+                app(\App\Services\DiscordDailySummaryService::class)->sendForDate($date, kind: 'plan', force: true);
+            }
+            if ($kind === 'both' || $kind === 'realization') {
+                app(\App\Services\DiscordDailySummaryService::class)->sendForDate($date, kind: 'realization', force: true);
+            }
+
+            $this->info('OK: discord daily report sent for '.$date->toDateString().'.');
 
             return;
         }
 
         app(\App\Services\DiscordDailySummaryService::class)->sendIfDue(Carbon::now());
-        $this->info('OK: discord daily summary checked.');
+        $this->info('OK: discord daily report checked.');
     } catch (\Throwable $e) {
         $this->error('FAILED: '.$e->getMessage());
     }
-})->purpose('Send Discord daily findings summary (medium/high) for Director');
+})->purpose('Send Discord daily planning/realisasi report (per-user + main channel)');
 
 Artisan::command('dayta:sync-holidays {year?}', function () {
     $yearArg = $this->argument('year');

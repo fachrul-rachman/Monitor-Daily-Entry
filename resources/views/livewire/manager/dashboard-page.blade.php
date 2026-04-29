@@ -48,9 +48,9 @@
                 ->count();
         }
 
-        // Status banner mengikuti "status pelaporan" (daily_entries), bukan status draft di item.
-        $planFilled = (bool) ($todayEntry && in_array($todayEntry->plan_status, ['submitted', 'late'], true));
-        $realizationFilled = (bool) ($todayEntry && in_array($todayEntry->realization_status, ['submitted', 'late'], true));
+        // Status banner: dianggap terisi jika sudah ada item (tanpa status draft).
+        $planFilled = (bool) ($todayEntry && $planItemsToday > 0);
+        $realizationFilled = (bool) ($todayEntry && $planItemsToday > 0 && $pendingRealization === 0);
 
         $activeBigRockCount = \App\Models\BigRock::query()
             ->where('user_id', $user->id)
@@ -100,8 +100,8 @@
             $realCount = $items->whereNotNull('plan_title')->where('realization_status', '!=', 'draft')->whereNotNull('realization_status')->count();
             $title = $items->first()?->plan_title ?? '—';
 
-            $planStatus = $planCount === 0 ? 'missing' : ($e->plan_status ?: 'submitted');
-            $realStatus = $planCount === 0 ? 'missing' : (($realCount >= $planCount) ? ($e->realization_status ?: 'submitted') : 'missing');
+            $planStatus = $planCount === 0 ? 'missing' : (in_array($e->plan_status, ['submitted', 'late', 'missing'], true) ? $e->plan_status : 'submitted');
+            $realStatus = $planCount === 0 ? 'missing' : (($realCount >= $planCount) ? (in_array($e->realization_status, ['submitted', 'late', 'missing'], true) ? $e->realization_status : 'submitted') : 'missing');
 
             return [
                 'title' => $title,

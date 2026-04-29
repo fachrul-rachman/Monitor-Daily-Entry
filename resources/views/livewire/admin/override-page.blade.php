@@ -310,7 +310,7 @@
                         <div>
                             <label class="label">Status Realisasi</label>
                             <select class="input border-primary" wire:model.live="editRealizationStatus">
-                                <option value="draft">Draft</option>
+                                <option value="draft">Missing</option>
                                 <option value="done">Done</option>
                                 <option value="partial">Partial</option>
                                 <option value="not_done">Not Done</option>

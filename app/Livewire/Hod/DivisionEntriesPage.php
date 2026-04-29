@@ -3,6 +3,7 @@
 namespace App\Livewire\Hod;
 
 use App\Models\DailyEntry;
+use App\Models\ReportSetting;
 use App\Models\Finding;
 use App\Models\HodAssignment;
 use App\Models\Division;
@@ -16,6 +17,32 @@ use Livewire\Component;
 #[Title('Entry Divisi')]
 class DivisionEntriesPage extends Component
 {
+    private function reportingStatus(?DailyEntry $entry, string $kind, string $date): string
+    {
+        $setting = ReportSetting::current();
+        $closeTime = $kind === 'plan' ? $setting->plan_close_time : $setting->realization_close_time;
+        $submittedAt = null;
+        if ($entry) {
+            $submittedAt = $kind === 'plan' ? $entry->plan_submitted_at : $entry->realization_submitted_at;
+        }
+
+        if ($submittedAt) {
+            $close = Carbon::parse($date.' '.$closeTime);
+            return Carbon::parse($submittedAt)->gt($close) ? 'late' : 'submitted';
+        }
+
+        $isToday = $date === Carbon::today()->toDateString();
+        if ($isToday) {
+            $now = Carbon::now();
+            $close = Carbon::parse($date.' '.$closeTime);
+            if ($now->lte($close)) {
+                return '';
+            }
+        }
+
+        return 'missing';
+    }
+
     #[Url]
     public string $divisionId = '';
 
@@ -252,8 +279,8 @@ class DivisionEntriesPage extends Component
             /** @var DailyEntry|null $entry */
             $entry = $entriesByUserId->get($mgr->id);
 
-            $planStatus = $entry?->plan_status ?: 'missing';
-            $realStatus = $entry?->realization_status ?: 'missing';
+            $planStatus = $this->reportingStatus($entry, 'plan', $date);
+            $realStatus = $this->reportingStatus($entry, 'real', $date);
 
             $firstItem = $entry?->items?->first();
 
@@ -320,8 +347,8 @@ class DivisionEntriesPage extends Component
             ->whereDate('entry_date', $date)
             ->first(['id', 'user_id', 'entry_date', 'plan_status', 'realization_status', 'plan_submitted_at', 'realization_submitted_at']);
 
-        $planStatus = $entry?->plan_status ?: 'missing';
-        $realStatus = $entry?->realization_status ?: 'missing';
+        $planStatus = $this->reportingStatus($entry, 'plan', $date);
+        $realStatus = $this->reportingStatus($entry, 'real', $date);
 
         $findings = Finding::query()
             ->where('user_id', $mgr->id)
@@ -387,7 +414,7 @@ class DivisionEntriesPage extends Component
                 'plan_text' => $item->plan_text ?: '',
                 'plan_relation_reason' => $item->plan_relation_reason ?: '',
                 'plan_duration_minutes' => $item->plan_duration_minutes !== null ? (int) $item->plan_duration_minutes : null,
-                'realization_status' => $item->realization_status ?: 'draft',
+                'realization_status' => $item->realization_status && $item->realization_status !== 'draft' ? $item->realization_status : 'missing',
                 'realization_text' => $item->realization_text ?: '',
                 'realization_reason' => $item->realization_reason ?: '',
                 'realization_duration_minutes' => $item->realization_duration_minutes !== null ? (int) $item->realization_duration_minutes : null,

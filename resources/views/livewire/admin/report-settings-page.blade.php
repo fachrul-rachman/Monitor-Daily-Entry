@@ -77,29 +77,27 @@
                 <h3 class="text-base font-semibold text-text mb-3" style="font-family: 'DM Sans', sans-serif;">Notifikasi Discord</h3>
 
                 <div class="bg-app-bg border border-border rounded-xl p-4 mb-4">
-                    <p class="text-sm text-text font-medium">Executive summary untuk Director</p>
-                    <p class="text-sm text-muted mt-1">Sistem mengirim ringkasan temuan hari itu ke Discord (hanya medium & high). Jika tidak ada temuan, sistem tidak mengirim.</p>
+                    <p class="text-sm text-text font-medium">Notifikasi Planning & Realisasi</p>
+                    <p class="text-sm text-muted mt-1">
+                        Sistem mengirim 2x sehari: <span class="font-medium">30 menit setelah jam tutup Plan</span> dan
+                        <span class="font-medium">30 menit setelah jam tutup Realisasi</span>.
+                    </p>
                 </div>
 
                 <label class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer min-h-[44px] transition-colors {{ $discordEnabled ? 'border-primary bg-primary-light text-primary' : 'border-border bg-surface text-text' }}">
                     <input type="checkbox" wire:model.live="discordEnabled" class="w-4 h-4 rounded accent-primary border-border">
-                    <span class="text-sm font-medium">Aktifkan Discord summary</span>
+                    <span class="text-sm font-medium">Aktifkan Notifikasi Discord</span>
                 </label>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div>
-                        <label class="label">Jam Kirim (WIB)</label>
-                        <input type="time" class="input @error('discordSummaryTime') input-error @enderror" wire:model="discordSummaryTime" />
-                        @error('discordSummaryTime') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
-                    </div>
-                    <div>
-                        <label class="label">Webhook URL</label>
+                    <div class="md:col-span-2">
+                        <label class="label">Webhook URL (Channel Utama)</label>
                         <input type="text" class="input @error('discordWebhookUrl') input-error @enderror" placeholder="https://discord.com/api/webhooks/..." wire:model.live="discordWebhookUrl" />
                         @error('discordWebhookUrl') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
 
-                <p class="text-sm text-muted mt-2">Webhook ini cukup 1 untuk semua ringkasan harian.</p>
+                <p class="text-sm text-muted mt-2">Webhook ini khusus rekap channel utama; webhook per-user diatur dari halaman Users.</p>
             </div>
 
             {{-- Submit --}}

@@ -23,6 +23,8 @@ class UserFormModal extends Component
 
     public bool $isActive = true;
 
+    public string $discordWebhookUrl = '';
+
     public bool $show = false;
 
     public array $availableDivisions = [];
@@ -41,6 +43,7 @@ class UserFormModal extends Component
             $this->role = $user->role;
             $this->division = $user->division?->name;
             $this->isActive = $user->status === 'active';
+            $this->discordWebhookUrl = (string) ($user->discord_webhook_url ?? '');
             $this->password = '';
         } else {
             $this->name = '';
@@ -48,6 +51,7 @@ class UserFormModal extends Component
             $this->role = '';
             $this->division = null;
             $this->isActive = true;
+            $this->discordWebhookUrl = '';
             $this->password = '';
         }
 
@@ -71,6 +75,7 @@ class UserFormModal extends Component
             'division' => 'nullable|string',
             'password' => $passwordRule,
             'isActive' => 'boolean',
+            'discordWebhookUrl' => 'nullable|string|max:2000',
         ];
     }
 
@@ -89,6 +94,7 @@ class UserFormModal extends Component
             'role' => $this->role,
             'division_id' => $divisionId,
             'status' => $this->isActive ? 'active' : 'inactive',
+            'discord_webhook_url' => trim($this->discordWebhookUrl) !== '' ? trim($this->discordWebhookUrl) : null,
         ];
 
         if ($this->password !== '') {

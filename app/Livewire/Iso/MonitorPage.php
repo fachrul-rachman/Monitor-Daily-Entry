@@ -8,6 +8,7 @@ use App\Models\BigRock;
 use App\Models\Division;
 use App\Models\Finding;
 use App\Models\DailyEntryItemAttachment;
+use App\Models\ReportSetting;
 use App\Models\RoadmapItem;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -51,13 +52,60 @@ class MonitorPage extends Component
     public array $selectedDays = [];
 
     /** @var array<int, array<string, mixed>> */
-    public array $selectedItems = [];
+    public array $selectedPlanItems = [];
+
+    /** @var array<int, array<string, mixed>> */
+    public array $selectedRealizationItems = [];
 
     /** @var array<int, array<string, mixed>> */
     public array $selectedFindings = [];
 
     /** @var array<int, array<string, mixed>> */
     public array $selectedBigRocks = [];
+
+    /** @var array<int, int> */
+    public array $openPlanItemIds = [];
+
+    /** @var array<int, int> */
+    public array $openRealItemIds = [];
+
+    /** @var array<int, int> */
+    public array $openBigRockIds = [];
+
+    private function reportingStatus(?DailyEntry $entry, string $kind, $fallbackSubmittedAt = null): string
+    {
+        if (! $entry || ! $entry->entry_date) {
+            return 'missing';
+        }
+
+        $setting = ReportSetting::current();
+        $date = Carbon::parse($entry->entry_date)->toDateString();
+        $closeTime = $kind === 'plan' ? $setting->plan_close_time : $setting->realization_close_time;
+        $submittedAt = $kind === 'plan' ? $entry->plan_submitted_at : $entry->realization_submitted_at;
+        if (! $submittedAt && $fallbackSubmittedAt) {
+            try {
+                $submittedAt = Carbon::parse($fallbackSubmittedAt);
+            } catch (\Throwable) {
+                $submittedAt = $submittedAt;
+            }
+        }
+
+        if ($submittedAt) {
+            $close = Carbon::parse($date.' '.$closeTime);
+            return Carbon::parse($submittedAt)->gt($close) ? 'late' : 'submitted';
+        }
+
+        $isToday = $date === Carbon::today()->toDateString();
+        if ($isToday) {
+            $now = Carbon::now();
+            $close = Carbon::parse($date.' '.$closeTime);
+            if ($now->lte($close)) {
+                return '';
+            }
+        }
+
+        return 'missing';
+    }
 
     public function mount(): void
     {
@@ -155,14 +203,33 @@ class MonitorPage extends Component
 
         $entryIds = $entries->pluck('id')->all();
 
-        $this->selectedDays = $entries->map(function (DailyEntry $e) {
+        $fallbackPlanByEntryId = [];
+        $fallbackRealByEntryId = [];
+        if (! empty($entryIds)) {
+            $fallbackPlanByEntryId = DailyEntryItem::query()
+                ->whereIn('daily_entry_id', $entryIds)
+                ->selectRaw('daily_entry_id, max(updated_at) as last_plan_at')
+                ->groupBy('daily_entry_id')
+                ->pluck('last_plan_at', 'daily_entry_id')
+                ->all();
+
+            $fallbackRealByEntryId = DailyEntryItem::query()
+                ->whereIn('daily_entry_id', $entryIds)
+                ->where('realization_status', '!=', 'draft')
+                ->selectRaw('daily_entry_id, max(updated_at) as last_real_at')
+                ->groupBy('daily_entry_id')
+                ->pluck('last_real_at', 'daily_entry_id')
+                ->all();
+        }
+
+        $this->selectedDays = $entries->map(function (DailyEntry $e) use ($fallbackPlanByEntryId, $fallbackRealByEntryId) {
             $date = $e->entry_date?->toDateString();
 
             return [
                 'id' => (int) $e->id,
                 'date' => $date ? Carbon::parse($date)->translatedFormat('j M Y (l)') : '—',
-                'plan_status' => (string) ($e->plan_status ?: 'missing'),
-                'real_status' => (string) ($e->realization_status ?: 'missing'),
+                'plan_status' => (string) $this->reportingStatus($e, 'plan', $fallbackPlanByEntryId[$e->id] ?? null),
+                'real_status' => (string) $this->reportingStatus($e, 'real', $fallbackRealByEntryId[$e->id] ?? null),
                 'plan_submitted_at' => $e->plan_submitted_at?->translatedFormat('j M Y, H:i'),
                 'real_submitted_at' => $e->realization_submitted_at?->translatedFormat('j M Y, H:i'),
             ];
@@ -171,7 +238,7 @@ class MonitorPage extends Component
         $items = [];
         if (! empty($entryIds)) {
             $items = DailyEntryItem::query()
-                ->with(['entry:id,entry_date', 'bigRock:id,title', 'roadmapItem:id,title'])
+                ->with(['entry:id,entry_date,plan_submitted_at,realization_submitted_at', 'bigRock:id,title', 'roadmapItem:id,title'])
                 ->whereIn('daily_entry_id', $entryIds)
                 ->orderByDesc('daily_entry_id')
                 ->orderBy('id')
@@ -181,9 +248,14 @@ class MonitorPage extends Component
                     'big_rock_id',
                     'roadmap_item_id',
                     'plan_title',
+                    'plan_text',
+                    'plan_relation_reason',
                     'plan_duration_minutes',
                     'realization_status',
+                    'realization_text',
+                    'realization_reason',
                     'realization_duration_minutes',
+                    'updated_at',
                 ]);
         }
 
@@ -218,7 +290,7 @@ class MonitorPage extends Component
                 ->all();
         }
 
-        $this->selectedItems = collect($items)->map(function (DailyEntryItem $it) use ($attachmentsByItemId) {
+        $rows = collect($items)->map(function (DailyEntryItem $it) use ($attachmentsByItemId) {
             $planMins = $it->plan_duration_minutes !== null ? (int) $it->plan_duration_minutes : null;
             $realMins = $it->realization_duration_minutes !== null ? (int) $it->realization_duration_minutes : null;
 
@@ -228,12 +300,40 @@ class MonitorPage extends Component
                 'title' => (string) ($it->plan_title ?: '-'),
                 'big_rock' => (string) ($it->bigRock?->title ?? '-'),
                 'roadmap' => (string) ($it->roadmapItem?->title ?? '-'),
+                'plan_text' => (string) ($it->plan_text ?? ''),
+                'plan_relation_reason' => (string) ($it->plan_relation_reason ?? ''),
                 'plan_minutes' => $planMins,
                 'real_minutes' => $realMins,
-                'real_status' => (string) ($it->realization_status ?: 'draft'),
+                'plan_status' => (string) $this->reportingStatus($it->entry, 'plan', $it->updated_at),
+                'real_status' => (string) $this->reportingStatus($it->entry, 'real', $it->updated_at),
+                'realization_text' => (string) ($it->realization_text ?? ''),
+                'realization_reason' => (string) ($it->realization_reason ?? ''),
+                'entry_id' => (int) $it->daily_entry_id,
                 'attachments' => $attachmentsByItemId[(int) $it->id] ?? [],
             ];
-        })->all();
+        });
+
+        $this->selectedPlanItems = $rows->values()->all();
+        $this->selectedRealizationItems = $rows
+            ->filter(function ($r) {
+                $hasText = trim((string) ($r['realization_text'] ?? '')) !== '';
+                $hasReason = trim((string) ($r['realization_reason'] ?? '')) !== '';
+                $hasAttachments = ! empty($r['attachments'] ?? []);
+
+                return $hasText || $hasReason || $hasAttachments;
+            })
+            ->values()
+            ->all();
+
+        $this->openPlanItemIds = [];
+        $this->openRealItemIds = [];
+        $this->openBigRockIds = [];
+        if (! empty($this->selectedPlanItems)) {
+            $this->openPlanItemIds = [(int) ($this->selectedPlanItems[0]['id'] ?? 0)];
+        }
+        if (! empty($this->selectedRealizationItems)) {
+            $this->openRealItemIds = [(int) ($this->selectedRealizationItems[0]['id'] ?? 0)];
+        }
 
         // Big Rock + Roadmap (read-only)
         $bigRocks = BigRock::query()
@@ -313,9 +413,60 @@ class MonitorPage extends Component
         $this->selectedUserId = null;
         $this->selectedUser = [];
         $this->selectedDays = [];
-        $this->selectedItems = [];
         $this->selectedBigRocks = [];
+        $this->selectedPlanItems = [];
+        $this->selectedRealizationItems = [];
         $this->selectedFindings = [];
+        $this->openPlanItemIds = [];
+        $this->openRealItemIds = [];
+        $this->openBigRockIds = [];
+    }
+
+    public function togglePlanItem(int $itemId): void
+    {
+        $ids = collect($this->openPlanItemIds)->map(fn ($v) => (int) $v)->values()->all();
+        if (in_array($itemId, $ids, true)) {
+            $this->openPlanItemIds = array_values(array_filter($ids, fn ($v) => (int) $v !== $itemId));
+            return;
+        }
+        $ids[] = $itemId;
+        $this->openPlanItemIds = array_values(array_unique($ids));
+    }
+
+    public function toggleRealItem(int $itemId): void
+    {
+        $ids = collect($this->openRealItemIds)->map(fn ($v) => (int) $v)->values()->all();
+        if (in_array($itemId, $ids, true)) {
+            $this->openRealItemIds = array_values(array_filter($ids, fn ($v) => (int) $v !== $itemId));
+            return;
+        }
+        $ids[] = $itemId;
+        $this->openRealItemIds = array_values(array_unique($ids));
+    }
+
+    public function toggleBigRock(int $bigRockId): void
+    {
+        $ids = collect($this->openBigRockIds)->map(fn ($v) => (int) $v)->values()->all();
+        if (in_array($bigRockId, $ids, true)) {
+            $this->openBigRockIds = array_values(array_filter($ids, fn ($v) => (int) $v !== $bigRockId));
+            return;
+        }
+        $ids[] = $bigRockId;
+        $this->openBigRockIds = array_values(array_unique($ids));
+    }
+
+    public function expandAll(): void
+    {
+        $this->openPlanItemIds = collect($this->selectedPlanItems)->pluck('id')->map(fn ($v) => (int) $v)->values()->all();
+        $this->openRealItemIds = collect($this->selectedRealizationItems)->pluck('id')->map(fn ($v) => (int) $v)->values()->all();
+        $this->openBigRockIds = collect($this->selectedBigRocks)->pluck('id')->map(fn ($v) => (int) $v)->values()->all();
+    }
+
+    public function collapseAll(): void
+    {
+        $this->openPlanItemIds = [];
+        $this->openRealItemIds = [];
+        $this->openBigRockIds = [];
     }
 
     public function render()

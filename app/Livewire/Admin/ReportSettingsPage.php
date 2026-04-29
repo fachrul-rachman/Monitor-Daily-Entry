@@ -19,8 +19,6 @@ class ReportSettingsPage extends Component
 
     public bool $discordEnabled = false;
 
-    public string $discordSummaryTime = '20:00';
-
     public string $discordWebhookUrl = '';
 
     public array $currentSettings = [];
@@ -40,7 +38,6 @@ class ReportSettingsPage extends Component
         $this->realizationCloseTime = \Illuminate\Support\Carbon::parse($setting->realization_close_time)->format('H:i');
 
         $this->discordEnabled = (bool) ($setting->discord_enabled ?? false);
-        $this->discordSummaryTime = \Illuminate\Support\Carbon::parse($setting->discord_summary_time ?? '20:00')->format('H:i');
         $this->discordWebhookUrl = (string) ($setting->discord_webhook_url ?? '');
 
         $this->refreshCurrentSettings();
@@ -55,7 +52,6 @@ class ReportSettingsPage extends Component
             'realizationOpenTime' => 'required|date_format:H:i',
             'realizationCloseTime' => 'required|date_format:H:i',
             'discordEnabled' => 'boolean',
-            'discordSummaryTime' => 'required|date_format:H:i',
             'discordWebhookUrl' => 'nullable|string|max:2000',
         ];
     }
@@ -90,7 +86,6 @@ class ReportSettingsPage extends Component
         $setting->realization_open_time = $this->realizationOpenTime;
         $setting->realization_close_time = $this->realizationCloseTime;
         $setting->discord_enabled = (bool) $this->discordEnabled;
-        $setting->discord_summary_time = $this->discordSummaryTime;
         $setting->discord_webhook_url = trim($this->discordWebhookUrl) !== '' ? trim($this->discordWebhookUrl) : null;
         $setting->is_active = true;
         $setting->effective_from = $setting->effective_from ?? now()->toDateString();
@@ -118,8 +113,9 @@ class ReportSettingsPage extends Component
         }
 
         try {
-            app(DiscordDailySummaryService::class)->sendForDate(Carbon::today());
-            $this->dispatch('toast', message: 'Test terkirim (atau di-skip jika tidak ada temuan medium/high hari ini).', type: 'success');
+            app(DiscordDailySummaryService::class)->sendForDate(Carbon::today(), kind: 'plan', force: true);
+            app(DiscordDailySummaryService::class)->sendForDate(Carbon::today(), kind: 'realization', force: true);
+            $this->dispatch('toast', message: 'Test terkirim (planning + realisasi).', type: 'success');
         } catch (\Throwable $e) {
             $this->dispatch('toast', message: 'Test gagal. Cek webhook URL atau coba lagi nanti.', type: 'danger');
         }
@@ -150,7 +146,6 @@ class ReportSettingsPage extends Component
             'realization_open' => $this->realizationOpenTime,
             'realization_close' => $this->realizationCloseTime,
             'discord_enabled' => $this->discordEnabled,
-            'discord_summary_time' => $this->discordSummaryTime,
         ];
     }
 
