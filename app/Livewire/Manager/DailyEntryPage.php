@@ -525,7 +525,7 @@ class DailyEntryPage extends Component
 
         if (! empty($this->realizationAttachments)) {
             foreach ($this->realizationAttachments as $upload) {
-                $path = $upload->store('daily-entry-attachments/'.$item->id);
+                $path = $upload->store('daily-entry-attachments/'.$item->id, 'public');
 
                 DailyEntryItemAttachment::create([
                     'daily_entry_item_id' => $item->id,

@@ -518,7 +518,7 @@ class DailyEntryPage extends Component
                 $mimeType = $upload->getMimeType();
                 $size = $upload->getSize();
 
-                $path = $upload->store('daily-entry-attachments/'.$item->id);
+                $path = $upload->store('daily-entry-attachments/'.$item->id, 'public');
 
                 DailyEntryItemAttachment::create([
                     'daily_entry_item_id' => $item->id,
