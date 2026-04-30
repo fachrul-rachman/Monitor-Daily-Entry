@@ -7,6 +7,7 @@ use App\Models\ReportSetting;
 use App\Models\Finding;
 use App\Models\HodAssignment;
 use App\Models\Division;
+use App\Models\LeaveRequest;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -250,6 +251,18 @@ class DivisionEntriesPage extends Component
 
         $userIds = $managers->pluck('id')->map(fn ($v) => (int) $v)->values()->all();
 
+        $offUserIds = LeaveRequest::query()
+            ->where('status', 'approved')
+            ->whereIn('user_id', $userIds)
+            ->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date)
+            ->pluck('user_id')
+            ->map(fn ($v) => (int) $v)
+            ->unique()
+            ->values()
+            ->all();
+        $offSet = ! empty($offUserIds) ? array_fill_keys($offUserIds, true) : [];
+
         $entriesByUserId = DailyEntry::query()
             ->with([
                 'items' => fn ($q) => $q->orderBy('id')->with(['bigRock:id,title', 'roadmapItem:id,title']),
@@ -285,7 +298,14 @@ class DivisionEntriesPage extends Component
             $firstItem = $entry?->items?->first();
 
             $baseFindings = $findingsByUserId[$mgr->id] ?? [];
-            $missingAsFinding = ($planStatus === 'missing' || $realStatus === 'missing');
+
+            $isOff = isset($offSet[(int) $mgr->id]);
+            if ($isOff) {
+                $planStatus = 'day_off';
+                $realStatus = 'day_off';
+            }
+
+            $missingAsFinding = ! $isOff && ($planStatus === 'missing' || $realStatus === 'missing');
             $severity = $this->normalizeSeverity($this->maxSeverity($baseFindings));
             if ($missingAsFinding && $this->severityRank($severity) < 2) {
                 $severity = 'medium';
@@ -350,6 +370,17 @@ class DivisionEntriesPage extends Component
         $planStatus = $this->reportingStatus($entry, 'plan', $date);
         $realStatus = $this->reportingStatus($entry, 'real', $date);
 
+        $isOff = LeaveRequest::query()
+            ->where('status', 'approved')
+            ->where('user_id', $mgr->id)
+            ->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date)
+            ->exists();
+        if ($isOff) {
+            $planStatus = 'day_off';
+            $realStatus = 'day_off';
+        }
+
         $findings = Finding::query()
             ->where('user_id', $mgr->id)
             ->whereDate('finding_date', $date)
@@ -364,7 +395,7 @@ class DivisionEntriesPage extends Component
             ])
             ->all();
 
-        $missingAsFinding = ($planStatus === 'missing' || $realStatus === 'missing');
+        $missingAsFinding = (! $isOff) && ($planStatus === 'missing' || $realStatus === 'missing');
         $severity = $this->normalizeSeverity($this->maxSeverity($findings));
         if ($missingAsFinding && $this->severityRank($severity) < 2) {
             $severity = 'medium';

@@ -15,6 +15,7 @@ $map = [
     'draft'       => ['label' => 'Missing',           'class' => 'badge-danger'],
     'late'        => ['label' => 'Terlambat',         'class' => 'badge-danger'],
     'missing'     => ['label' => 'Missing',           'class' => 'badge-danger'],
+    'day_off'     => ['label' => 'Day Off',           'class' => 'badge-muted'],
     'pending'     => ['label' => 'Pending',           'class' => 'badge-warning'],
     'approved'    => ['label' => 'Disetujui',         'class' => 'badge-success'],
     'rejected'    => ['label' => 'Ditolak',           'class' => 'badge-danger'],

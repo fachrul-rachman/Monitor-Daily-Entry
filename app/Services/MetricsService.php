@@ -6,6 +6,7 @@ use App\Models\DailyEntry;
 use App\Models\Finding;
 use App\Models\Holiday;
 use App\Models\HealthScore;
+use App\Models\LeaveRequest;
 use App\Models\ReportSetting;
 use App\Models\RoadmapItem;
 use App\Models\User;
@@ -43,6 +44,38 @@ class MetricsService
         DB::transaction(function () use ($users, $workdays, $setting, $now): void {
             $dateStrings = array_map(fn (Carbon $d) => $d->toDateString(), $workdays);
 
+            $userIds = $users->pluck('id')->map(fn ($v) => (int) $v)->values()->all();
+
+            // Approved day off map: user_id + date => true (only for workdays range).
+            $offByUser = [];
+            $rangeFrom = $dateStrings[0] ?? Carbon::today()->toDateString();
+            $rangeTo = $dateStrings ? $dateStrings[count($dateStrings) - 1] : Carbon::today()->toDateString();
+            $approvedLeaves = LeaveRequest::query()
+                ->where('status', 'approved')
+                ->whereIn('user_id', $userIds)
+                ->whereDate('start_date', '<=', $rangeTo)
+                ->whereDate('end_date', '>=', $rangeFrom)
+                ->get(['user_id', 'start_date', 'end_date']);
+
+            if ($approvedLeaves->isNotEmpty()) {
+                $workdaySet = array_fill_keys($dateStrings, true);
+                foreach ($approvedLeaves as $lr) {
+                    $uid = (int) $lr->user_id;
+                    if (! $lr->start_date || ! $lr->end_date) {
+                        continue;
+                    }
+                    $cursor = Carbon::parse($lr->start_date)->startOfDay();
+                    $end = Carbon::parse($lr->end_date)->startOfDay();
+                    while ($cursor->lte($end)) {
+                        $k = $cursor->toDateString();
+                        if (isset($workdaySet[$k])) {
+                            $offByUser[$uid][$k] = true;
+                        }
+                        $cursor->addDay();
+                    }
+                }
+            }
+
             // Bersihkan data lama di rentang ini (idempotent).
             Finding::query()
                 ->whereIn('finding_date', $dateStrings)
@@ -67,7 +100,8 @@ class MetricsService
                 ->delete();
 
             foreach ($users as $user) {
-                $this->computeFindingsForUser($user, $workdays, $now, $setting);
+                $userOffSet = $offByUser[(int) $user->id] ?? [];
+                $this->computeFindingsForUser($user, $workdays, $now, $setting, $userOffSet);
             }
 
             $this->computeScores($users, $workdays, $now, $setting);
@@ -100,7 +134,7 @@ class MetricsService
         return $days;
     }
 
-    private function computeFindingsForUser(User $user, array $workdays, Carbon $now, ReportSetting $setting): void
+    private function computeFindingsForUser(User $user, array $workdays, Carbon $now, ReportSetting $setting, array $offDateSet = []): void
     {
         $dateStrings = array_map(fn (Carbon $d) => $d->toDateString(), $workdays);
 
@@ -113,6 +147,12 @@ class MetricsService
         // Missing daily (per hari)
         foreach ($workdays as $d) {
             $key = $d->toDateString();
+
+            // Day off: tidak dianggap missing dan tidak dibuat temuan.
+            if (isset($offDateSet[$key])) {
+                continue;
+            }
+
             /** @var DailyEntry|null $entry */
             $entry = $entries->get($key);
 

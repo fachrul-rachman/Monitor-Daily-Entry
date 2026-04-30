@@ -122,10 +122,24 @@ class DiscordDailySummaryService
             return;
         }
 
-        $statusRows = $this->computeStatuses($eligibleUsers, $date, $kind, $closeAt);
+        $eligibleUserIds = $eligibleUsers->pluck('id')->map(fn ($v) => (int) $v)->values()->all();
+        $offUserIds = LeaveRequest::query()
+            ->where('status', 'approved')
+            ->whereIn('user_id', $eligibleUserIds ?: [-1])
+            ->whereDate('start_date', '<=', $day)
+            ->whereDate('end_date', '>=', $day)
+            ->pluck('user_id')
+            ->map(fn ($v) => (int) $v)
+            ->unique()
+            ->values()
+            ->all();
+        $offSet = ! empty($offUserIds) ? array_fill_keys($offUserIds, true) : [];
+
+        $statusRows = $this->computeStatuses($eligibleUsers, $date, $kind, $closeAt, $offSet);
         $okNames = $statusRows->where('status', 'submitted')->pluck('name')->values()->all();
         $lateNames = $statusRows->where('status', 'late')->pluck('name')->values()->all();
         $missingNames = $statusRows->where('status', 'missing')->pluck('name')->values()->all();
+        $offNames = $statusRows->where('status', 'day_off')->pluck('name')->values()->all();
 
         // Per-user messages (skip if webhook missing).
         foreach ($statusRows as $row) {
@@ -135,6 +149,11 @@ class DiscordDailySummaryService
             }
 
             $userId = (int) $row['id'];
+
+            // Day off: hanya ditampilkan di rekap planning channel utama, tidak perlu per-user.
+            if (($row['status'] ?? '') === 'day_off') {
+                continue;
+            }
             $userType = "daily_{$kind}_user_{$userId}";
 
             $existing = NotificationLog::query()
@@ -208,7 +227,7 @@ class DiscordDailySummaryService
             return;
         }
 
-        $mainContent = $this->buildMainContent($date, $kind, $okNames, $lateNames, $missingNames);
+        $mainContent = $this->buildMainContent($date, $kind, $okNames, $lateNames, $missingNames, $offNames);
 
         $mainLog = NotificationLog::query()->updateOrCreate(
             [
@@ -304,7 +323,7 @@ class DiscordDailySummaryService
         return $users->reject(fn (User $u) => isset($skipSet[$u->id]))->values();
     }
 
-    private function computeStatuses(Collection $users, Carbon $date, string $kind, Carbon $closeAt): Collection
+    private function computeStatuses(Collection $users, Carbon $date, string $kind, Carbon $closeAt, array $offDateUserSet = []): Collection
     {
         $ids = $users->pluck('id')->all();
         $day = $date->toDateString();
@@ -315,9 +334,22 @@ class DiscordDailySummaryService
             ->get(['id', 'user_id', 'plan_submitted_at', 'realization_submitted_at'])
             ->keyBy('user_id');
 
-        return $users->map(function (User $u) use ($entries, $kind, $closeAt) {
+        return $users->map(function (User $u) use ($entries, $kind, $closeAt, $offDateUserSet) {
             /** @var DailyEntry|null $entry */
             $entry = $entries->get($u->id);
+
+            $isOff = isset($offDateUserSet[(int) $u->id]);
+            if ($isOff) {
+                return [
+                    'id' => (int) $u->id,
+                    'name' => (string) $u->name,
+                    'role' => (string) $u->role,
+                    'division_id' => $u->division_id,
+                    'discord_webhook_url' => $u->discord_webhook_url,
+                    'status' => 'day_off',
+                    'submitted_at' => null,
+                ];
+            }
 
             $submittedAt = null;
             if ($entry) {
@@ -491,7 +523,7 @@ class DiscordDailySummaryService
         ];
     }
 
-    private function buildMainContent(Carbon $date, string $kind, array $okNames, array $lateNames, array $missingNames): string
+    private function buildMainContent(Carbon $date, string $kind, array $okNames, array $lateNames, array $missingNames, array $offNames = []): string
     {
         $label = $kind === 'plan' ? 'Planning' : 'Realisasi';
         $dateLabel = $date->translatedFormat('l, j F Y');
@@ -501,6 +533,9 @@ class DiscordDailySummaryService
         $lines[] = '- Jumlah ok: '.count($okNames);
         $lines[] = '- Jumlah Telat: '.count($lateNames).(count($lateNames) ? ' -- '.implode(', ', $lateNames) : '');
         $lines[] = '- Jumlah Missing: '.count($missingNames).(count($missingNames) ? ' -- '.implode(', ', $missingNames) : '');
+        if ($kind === 'plan') {
+            $lines[] = '- Jumlah Off: '.count($offNames).(count($offNames) ? ' -- '.implode(', ', $offNames) : '');
+        }
 
         $summary = $this->aiSummaryMain($kind, $date, $okNames, $lateNames, $missingNames);
         if ($summary !== '') {
