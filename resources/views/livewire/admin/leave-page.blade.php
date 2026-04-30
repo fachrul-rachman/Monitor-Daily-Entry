@@ -1,5 +1,5 @@
 <div>
-    <x-ui.page-header title="Cuti & Izin" description="Kelola permintaan cuti dan izin karyawan" />
+    <x-ui.page-header title="Pengajuan Off" description="Kelola permintaan off karyawan" />
 
     {{-- Summary chips --}}
     <div class="flex flex-wrap gap-2 mb-6">

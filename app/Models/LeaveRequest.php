@@ -16,6 +16,10 @@ class LeaveRequest extends Model
         'start_date',
         'end_date',
         'reason',
+        'attachment_path',
+        'attachment_original_name',
+        'attachment_mime_type',
+        'attachment_size_bytes',
         'status',
         'approved_by',
         'approved_at',
@@ -51,4 +55,3 @@ class LeaveRequest extends Model
         return $this->belongsTo(User::class, 'rejected_by');
     }
 }
-

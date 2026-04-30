@@ -111,7 +111,7 @@ class MonitorPage extends Component
     {
         $today = Carbon::today();
         $this->to = $this->to ?: $today->toDateString();
-        $this->from = $this->from ?: $today->copy()->subDays(7)->toDateString();
+        $this->from = $this->from ?: $today->toDateString();
         $this->normalizeDates();
     }
 
@@ -139,7 +139,7 @@ class MonitorPage extends Component
         $today = Carbon::today();
         $this->reset('division', 'role', 'status', 'search');
         $this->to = $today->toDateString();
-        $this->from = $today->copy()->subDays(7)->toDateString();
+        $this->from = $today->toDateString();
         $this->normalizeDates();
         $this->resetPage();
         $this->closeDrawer();
@@ -152,7 +152,7 @@ class MonitorPage extends Component
             $to = Carbon::parse($this->to)->startOfDay();
         } catch (\Throwable) {
             $today = Carbon::today();
-            $from = $today->copy()->subDays(7);
+            $from = $today;
             $to = $today;
         }
 

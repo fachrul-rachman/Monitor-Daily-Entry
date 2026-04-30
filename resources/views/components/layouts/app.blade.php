@@ -76,7 +76,7 @@
                 </a>
                 <a href="{{ route('admin.leave') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'admin.leave' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    Cuti & Izin
+                    Pengajuan Off
                 </a>
                 <a href="{{ route('admin.override') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'admin.override' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -121,7 +121,7 @@
                 </a>
                 <a href="{{ route('director.manage.leave') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'director.manage.leave' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    Cuti & Izin
+                    Pengajuan Off
                 </a>
 
                 <p class="px-4 py-2 mt-4 text-sm uppercase tracking-widest text-sidebar-section">Tools</p>
@@ -168,7 +168,7 @@
 	                </a>
 	                <a href="{{ route('hod.leave') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'hod.leave' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
 	                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-	                    Cuti & Izin
+	                    Pengajuan Off
 	                </a>
 
 	                <p class="px-4 py-2 mt-4 text-sm uppercase tracking-widest text-sidebar-section">Tools</p>
@@ -200,7 +200,7 @@
                 </a>
                 <a href="{{ route('manager.leave') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'manager.leave' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-3-9a9 9 0 100 18 9 9 0 000-18z"/></svg>
-                    Cuti & Izin
+                    Pengajuan Off
                 </a>
             @elseif($currentRole === 'iso')
                 {{-- ===== ISO SIDEBAR ===== --}}
@@ -212,7 +212,7 @@
                 </a>
                 <a href="{{ route('iso.leave') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'iso.leave' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-3-9a9 9 0 100 18 9 9 0 000-18z"/></svg>
-                    Approval Cuti
+                    Approval Off
                 </a>
             @endif
         </nav>

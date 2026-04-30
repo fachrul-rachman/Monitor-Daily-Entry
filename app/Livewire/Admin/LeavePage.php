@@ -11,7 +11,7 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-#[Title('Cuti & Izin')]
+#[Title('Pengajuan Off')]
 class LeavePage extends Component
 {
     use WithPagination;
@@ -323,7 +323,7 @@ class LeavePage extends Component
             'divisionOptions' => $divisionOptions,
             'typeOptions' => $typeOptions,
         ])->layout('components.layouts.app', [
-            'title' => 'Cuti & Izin',
+            'title' => 'Pengajuan Off',
         ]);
     }
 }

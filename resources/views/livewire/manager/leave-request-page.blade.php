@@ -1,19 +1,19 @@
 <div>
-    <x-ui.page-header title="Cuti & Izin" description="Ajukan cuti/izin dan pantau status pengajuan Anda" />
+    <x-ui.page-header title="Pengajuan Off" description="Ajukan off dan pantau status pengajuan Anda" />
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <x-ui.card>
-            <h3 class="text-sm font-semibold text-text mb-3">Ajukan Cuti / Izin</h3>
+            <h3 class="text-sm font-semibold text-text mb-3">Ajukan Off</h3>
 
             <form class="space-y-4" wire:submit.prevent="submit">
                 <div>
                     <label class="label">Tipe <span class="text-danger">*</span></label>
-                    <input
-                        type="text"
-                        class="input"
-                        placeholder="Contoh: Cuti Tahunan / Izin Sakit / Izin Pribadi"
-                        wire:model.live="type"
-                    />
+                    <select class="input" wire:model.live="type">
+                        <option value="">Pilih tipe...</option>
+                        <option value="cuti">Cuti (ambil cuti)</option>
+                        <option value="izin">Izin (penugasan > 1 hari)</option>
+                        <option value="skip">Skip (penugasan 1 hari)</option>
+                    </select>
                     @error('type') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                 </div>
 
@@ -40,9 +40,16 @@
                     @error('reason') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                 </div>
 
+                <div>
+                    <label class="label">Lampiran <span class="text-danger">*</span></label>
+                    <input type="file" class="input" wire:model="attachment" />
+                    <p class="text-sm text-muted mt-1">Wajib. Maks 50MB.</p>
+                    @error('attachment') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
+                </div>
+
                 <button type="submit" class="btn-primary w-full" wire:loading.attr="disabled" wire:target="submit">
                     <span wire:loading.remove wire:target="submit">Kirim Pengajuan</span>
-                    <span wire:loading wire:target="submit">Mengirim…</span>
+                    <span wire:loading wire:target="submit">Mengirim...</span>
                 </button>
             </form>
         </x-ui.card>

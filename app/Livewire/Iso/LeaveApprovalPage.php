@@ -9,7 +9,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-#[Title('Cuti & Izin')]
+#[Title('Pengajuan Off')]
 class LeaveApprovalPage extends Component
 {
     use WithPagination;
@@ -46,12 +46,6 @@ class LeaveApprovalPage extends Component
             ->first();
 
         if (! $row) {
-            return;
-        }
-
-        // ISO hanya memutuskan pengajuan HoD.
-        $isHodRequest = ($row->user?->role ?? null) === 'hod';
-        if (! $isHodRequest) {
             return;
         }
 
@@ -97,15 +91,14 @@ class LeaveApprovalPage extends Component
         $pending = LeaveRequest::query()
             ->with(['user:id,name,division_id,role', 'division:id,name'])
             ->where('status', 'pending')
-            ->whereIn('user_id', User::query()->where('role', 'hod')->select('id'))
+            ->whereIn('user_id', User::query()->whereIn('role', ['hod', 'manager'])->select('id'))
             ->orderByDesc('created_at')
             ->paginate(10);
 
         return view('livewire.iso.leave-approval-page', [
             'pending' => $pending,
         ])->layout('components.layouts.app', [
-            'title' => 'Cuti & Izin',
+            'title' => 'Pengajuan Off',
         ]);
     }
 }
-

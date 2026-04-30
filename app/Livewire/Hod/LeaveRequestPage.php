@@ -9,12 +9,14 @@ use App\Models\User;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
-#[Title('Cuti & Izin')]
+#[Title('Pengajuan Off')]
 class LeaveRequestPage extends Component
 {
     use WithPagination;
+    use WithFileUploads;
 
     public string $tab = 'approve'; // approve | mine
 
@@ -23,6 +25,7 @@ class LeaveRequestPage extends Component
     public ?string $endDate = null;
     public string $reason = '';
     public string $divisionId = '';
+    public $attachment;
 
     public string $decisionNote = '';
 
@@ -49,11 +52,12 @@ class LeaveRequestPage extends Component
     public function submit(): void
     {
         $data = $this->validate([
-            'type' => 'required|string|max:50',
+            'type' => 'required|string|in:cuti,izin,skip',
             'startDate' => 'required|date',
             'endDate' => 'required|date',
             'reason' => 'nullable|string',
             'divisionId' => 'required|integer',
+            'attachment' => 'required|file|max:51200',
         ]);
 
         $start = Carbon::parse($data['startDate'])->startOfDay();
@@ -61,6 +65,15 @@ class LeaveRequestPage extends Component
 
         if ($start->gt($end)) {
             [$start, $end] = [$end, $start];
+        }
+
+        if ($data['type'] === 'skip') {
+            $end = $start->copy();
+        }
+
+        if ($data['type'] === 'izin' && $start->eq($end)) {
+            $this->addError('endDate', 'Izin untuk penugasan lebih dari 1 hari.');
+            return;
         }
 
         $hod = auth()->user();
@@ -73,6 +86,9 @@ class LeaveRequestPage extends Component
             return;
         }
 
+        $file = $this->attachment;
+        $path = $file->store('leave-attachments', 'public');
+
         LeaveRequest::query()->create([
             'user_id' => $hod->id,
             'division_id' => (int) $data['divisionId'],
@@ -80,17 +96,21 @@ class LeaveRequestPage extends Component
             'start_date' => $start->toDateString(),
             'end_date' => $end->toDateString(),
             'reason' => trim((string) ($data['reason'] ?? '')) ?: null,
+            'attachment_path' => $path,
+            'attachment_original_name' => $file->getClientOriginalName(),
+            'attachment_mime_type' => $file->getMimeType(),
+            'attachment_size_bytes' => $file->getSize(),
             'status' => 'pending',
         ]);
 
-        $this->reset('type', 'reason');
+        $this->reset('type', 'reason', 'attachment');
         $today = Carbon::today()->toDateString();
         $this->startDate = $today;
         $this->endDate = $today;
 
         $this->tab = 'mine';
         $this->resetPage();
-        $this->dispatch('toast', message: 'Pengajuan cuti/izin berhasil dibuat dan menunggu persetujuan ISO.', type: 'success');
+        $this->dispatch('toast', message: 'Pengajuan off berhasil dibuat dan menunggu persetujuan.', type: 'success');
     }
 
     public function approve(int $id): void
@@ -246,8 +266,7 @@ class LeaveRequestPage extends Component
             'pending' => $pending,
             'mine' => $mine,
         ])->layout('components.layouts.app', [
-            'title' => 'Cuti & Izin',
+            'title' => 'Pengajuan Off',
         ]);
     }
 }
-

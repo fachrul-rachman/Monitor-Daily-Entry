@@ -4,10 +4,12 @@ namespace App\Services;
 
 use App\Models\DailyEntry;
 use App\Models\DailyEntryItem;
+use App\Models\BigRock;
 use App\Models\Holiday;
 use App\Models\LeaveRequest;
 use App\Models\NotificationLog;
 use App\Models\ReportSetting;
+use App\Models\RoadmapItem;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -49,7 +51,7 @@ class DiscordDailySummaryService
         }
     }
 
-    public function sendForDate(Carbon $date, string $kind = 'plan', ?Carbon $now = null, bool $force = false): void
+    public function sendForDate(Carbon $date, string $kind = 'plan', ?Carbon $now = null, bool $force = false, ?int $onlyUserId = null): void
     {
         $now = $now ?: Carbon::now();
         $setting = ReportSetting::current();
@@ -97,6 +99,9 @@ class DiscordDailySummaryService
         }
 
         $eligibleUsers = $this->eligibleUsersForDate($date);
+        if ($onlyUserId) {
+            $eligibleUsers = $eligibleUsers->filter(fn (User $u) => (int) $u->id === (int) $onlyUserId)->values();
+        }
         if ($eligibleUsers->isEmpty()) {
             NotificationLog::query()->updateOrCreate(
                 [
@@ -114,11 +119,6 @@ class DiscordDailySummaryService
                 ],
             );
 
-            return;
-        }
-
-        $mainType = "daily_{$kind}_main";
-        if (! $force && $this->shouldSkipDueToLog($mainType, $day, $now)) {
             return;
         }
 
@@ -197,7 +197,17 @@ class DiscordDailySummaryService
             }
         }
 
-        // Main channel message.
+        // Main channel message (skip if this is single-user testing).
+        $mainType = "daily_{$kind}_main";
+        $shouldSendMain = ! $onlyUserId;
+        if ($shouldSendMain && ! $force && $this->shouldSkipDueToLog($mainType, $day, $now)) {
+            $shouldSendMain = false;
+        }
+
+        if (! $shouldSendMain) {
+            return;
+        }
+
         $mainContent = $this->buildMainContent($date, $kind, $okNames, $lateNames, $missingNames);
 
         $mainLog = NotificationLog::query()->updateOrCreate(
@@ -395,6 +405,8 @@ class DiscordDailySummaryService
                 ->get([
                     'id',
                     'daily_entry_id',
+                    'big_rock_id',
+                    'roadmap_item_id',
                     'plan_title',
                     'plan_text',
                     'plan_relation_reason',
@@ -459,7 +471,7 @@ class DiscordDailySummaryService
             $lines[] = implode("\n\n", $blocks);
         }
 
-        $summary = $this->aiSummaryPerUser($kind, (string) $row['name'], $date, $items);
+        $summary = $this->aiSummaryPerUser($kind, (int) $row['id'], (string) $row['name'], $date, $items);
         if ($summary !== '') {
             $lines[] = '';
             $lines[] = 'Summary: '.$summary;
@@ -534,11 +546,16 @@ class DiscordDailySummaryService
             return '-';
         }
 
+        $appUrl = rtrim((string) config('app.url'), '/');
+
         $parts = [];
         foreach ($attachments as $a) {
             $name = trim((string) ($a->original_name ?? 'file'));
             if ($name === '') $name = 'file';
             $url = Storage::url((string) $a->path);
+            if ($appUrl !== '' && ! Str::startsWith($url, ['http://', 'https://'])) {
+                $url = $appUrl.'/'.ltrim($url, '/');
+            }
             $parts[] = $name.': '.$url;
         }
 
@@ -585,17 +602,68 @@ class DiscordDailySummaryService
         return $chunks;
     }
 
-    private function aiSummaryPerUser(string $kind, string $userName, Carbon $date, $items): string
+    private function aiSummaryPerUser(string $kind, int $userId, string $userName, Carbon $date, $items): string
     {
         try {
             $system = "Anda adalah asisten ringkasan harian yang netral dan singkat.\n"
                 ."Tulis 1-2 kalimat Bahasa Indonesia yang menilai apakah laporan {$kind} terlihat selaras dengan Big Rock/Roadmap dan tidak sekadar formalitas.\n"
                 ."Jangan menghakimi; gunakan gaya profesional dan faktual.";
 
+            $bigRocks = BigRock::query()
+                ->where('user_id', $userId)
+                ->orderBy('status')
+                ->orderBy('title')
+                ->get(['id', 'title', 'status']);
+
+            $roadmaps = RoadmapItem::query()
+                ->whereIn('big_rock_id', $bigRocks->pluck('id')->all())
+                ->orderBy('sort_order')
+                ->orderBy('title')
+                ->get(['id', 'big_rock_id', 'title', 'status']);
+
+            $recentFrom = $date->copy()->subDays(7)->toDateString();
+            $recentTo = $date->copy()->subDay()->toDateString();
+            $recentEntries = DailyEntry::query()
+                ->where('user_id', $userId)
+                ->whereDate('entry_date', '>=', $recentFrom)
+                ->whereDate('entry_date', '<=', $recentTo)
+                ->orderByDesc('entry_date')
+                ->get(['id', 'entry_date', 'plan_submitted_at', 'realization_submitted_at']);
+
+            $recentEntryIds = $recentEntries->pluck('id')->all();
+            $recentItemsByEntry = $recentEntryIds
+                ? DailyEntryItem::query()
+                    ->whereIn('daily_entry_id', $recentEntryIds)
+                    ->orderBy('id')
+                    ->get(['id', 'daily_entry_id', 'plan_title', 'big_rock_id', 'roadmap_item_id'])
+                    ->groupBy('daily_entry_id')
+                : collect();
+
             $context = [
                 'kind' => $kind,
                 'date' => $date->toDateString(),
                 'user' => $userName,
+                'user_big_rocks' => $bigRocks->map(fn ($br) => [
+                    'id' => (int) $br->id,
+                    'title' => (string) $br->title,
+                    'status' => (string) $br->status,
+                ])->all(),
+                'user_roadmaps' => $roadmaps->map(fn ($rm) => [
+                    'id' => (int) $rm->id,
+                    'big_rock_id' => (int) $rm->big_rock_id,
+                    'title' => (string) $rm->title,
+                    'status' => (string) $rm->status,
+                ])->all(),
+                'recent_days' => $recentEntries->map(function (DailyEntry $e) use ($recentItemsByEntry) {
+                    $its = $recentItemsByEntry->get($e->id, collect());
+                    return [
+                        'date' => $e->entry_date?->toDateString(),
+                        'plan_submitted_at' => $e->plan_submitted_at?->toDateTimeString(),
+                        'realization_submitted_at' => $e->realization_submitted_at?->toDateTimeString(),
+                        'item_count' => $its->count(),
+                        'plan_titles' => $its->take(3)->map(fn ($i) => (string) ($i->plan_title ?? ''))->filter()->values()->all(),
+                    ];
+                })->all(),
                 'items' => $items->map(function ($it) {
                     return [
                         'plan_title' => $it->plan_title,

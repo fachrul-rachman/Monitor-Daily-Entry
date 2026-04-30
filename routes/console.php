@@ -20,9 +20,11 @@ Artisan::command('dayta:compute-metrics {--from=} {--to=}', function () {
     $this->info('OK: metrics computed.');
 })->purpose('Compute findings and health scores for a date range');
 
-Artisan::command('dayta:send-discord-daily-summary {--date=} {--kind=}', function () {
+Artisan::command('dayta:send-discord-daily-summary {--date=} {--kind=} {--user-id=}', function () {
     $dateOpt = $this->option('date');
     $kindOpt = (string) ($this->option('kind') ?? '');
+    $userIdOpt = $this->option('user-id');
+    $onlyUserId = $userIdOpt !== null && $userIdOpt !== '' ? (int) $userIdOpt : null;
 
     try {
         if ($dateOpt) {
@@ -35,10 +37,10 @@ Artisan::command('dayta:send-discord-daily-summary {--date=} {--kind=}', functio
             }
 
             if ($kind === 'both' || $kind === 'plan') {
-                app(\App\Services\DiscordDailySummaryService::class)->sendForDate($date, kind: 'plan', force: true);
+                app(\App\Services\DiscordDailySummaryService::class)->sendForDate($date, kind: 'plan', force: true, onlyUserId: $onlyUserId);
             }
             if ($kind === 'both' || $kind === 'realization') {
-                app(\App\Services\DiscordDailySummaryService::class)->sendForDate($date, kind: 'realization', force: true);
+                app(\App\Services\DiscordDailySummaryService::class)->sendForDate($date, kind: 'realization', force: true, onlyUserId: $onlyUserId);
             }
 
             $this->info('OK: discord daily report sent for '.$date->toDateString().'.');

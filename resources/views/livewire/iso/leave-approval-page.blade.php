@@ -1,8 +1,8 @@
 <div>
-    <x-ui.page-header title="Cuti & Izin" description="Persetujuan pengajuan cuti/izin untuk HoD (semua divisi)" />
+    <x-ui.page-header title="Pengajuan Off" description="Persetujuan pengajuan off untuk HoD dan Manager (semua divisi)" />
 
     <x-ui.card>
-        <h3 class="text-sm font-semibold text-text mb-3">Pengajuan HoD (Pending)</h3>
+        <h3 class="text-sm font-semibold text-text mb-3">Pengajuan Pending</h3>
 
         <div class="mb-4">
             <label class="label">Catatan keputusan (opsional)</label>
@@ -14,9 +14,11 @@
                 <thead>
                     <tr class="bg-app-bg border-b border-border">
                         <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">User</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Role</th>
                         <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Divisi</th>
                         <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Tanggal</th>
                         <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Tipe</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Lampiran</th>
                         <th class="text-right px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Aksi</th>
                     </tr>
                 </thead>
@@ -24,6 +26,7 @@
                     @forelse($pending as $r)
                         <tr class="hover:bg-app-bg transition-colors">
                             <td class="px-4 py-3.5 text-text">{{ $r->user?->name ?? '—' }}</td>
+                            <td class="px-4 py-3.5 text-text">{{ strtoupper($r->user?->role ?? '') }}</td>
                             <td class="px-4 py-3.5 text-text">{{ $r->division?->name ?? '—' }}</td>
                             <td class="px-4 py-3.5 text-text">
                                 @php($s = optional($r->start_date)->toDateString())
@@ -37,6 +40,15 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3.5 text-text">{{ $r->type }}</td>
+                            <td class="px-4 py-3.5 text-text">
+                                @if($r->attachment_path)
+                                    <a class="text-primary underline" href="{{ \Illuminate\Support\Facades\Storage::url($r->attachment_path) }}" target="_blank" rel="noopener">
+                                        {{ $r->attachment_original_name ?: 'Lihat' }}
+                                    </a>
+                                @else
+                                    —
+                                @endif
+                            </td>
                             <td class="px-4 py-3.5">
                                 <div class="flex justify-end gap-2">
                                     <button type="button" class="btn-primary px-4" wire:click="approve({{ $r->id }})">Setujui</button>
@@ -47,7 +59,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-8 text-center text-sm text-muted">Tidak ada pengajuan pending.</td>
+                            <td colspan="7" class="px-4 py-8 text-center text-sm text-muted">Tidak ada pengajuan pending.</td>
                         </tr>
                     @endforelse
                 </tbody>

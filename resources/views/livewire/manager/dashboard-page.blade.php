@@ -178,7 +178,7 @@
         <x-ui.card class="!py-4">
             <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
                 <div>
-                    <p class="text-sm font-semibold text-text">Butuh ajukan cuti/izin?</p>
+                    <p class="text-sm font-semibold text-text">Butuh ajukan off?</p>
                     <p class="text-sm text-muted mt-1">Ajukan di sini, lalu tunggu persetujuan HoD.</p>
                 </div>
                 <a href="{{ route('manager.leave') }}" class="btn-secondary px-5">Cuti &amp; Izin</a>

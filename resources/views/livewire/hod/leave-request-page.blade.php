@@ -1,5 +1,5 @@
 <div>
-    <x-ui.page-header title="Cuti & Izin" description="Ajukan cuti/izin dan setujui pengajuan Manager di divisi Anda" />
+    <x-ui.page-header title="Pengajuan Off" description="Ajukan off dan setujui pengajuan Manager di divisi Anda" />
 
     <div class="mb-4 flex gap-2 border-b border-border">
         <button
@@ -31,6 +31,7 @@
                             <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Divisi</th>
                             <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Tanggal</th>
                             <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Tipe</th>
+                            <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Lampiran</th>
                             <th class="text-right px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Aksi</th>
                         </tr>
                     </thead>
@@ -51,6 +52,15 @@
                                     @endif
                                 </td>
                                 <td class="px-4 py-3.5 text-text">{{ $r->type }}</td>
+                                <td class="px-4 py-3.5 text-text">
+                                    @if($r->attachment_path)
+                                        <a class="text-primary underline" href="{{ \Illuminate\Support\Facades\Storage::url($r->attachment_path) }}" target="_blank" rel="noopener">
+                                            {{ $r->attachment_original_name ?: 'Lihat' }}
+                                        </a>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
                                 <td class="px-4 py-3.5">
                                     <div class="flex justify-end gap-2">
                                         <button type="button" class="btn-primary px-4" wire:click="approve({{ $r->id }})">Setujui</button>
@@ -61,7 +71,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-4 py-8 text-center text-sm text-muted">Tidak ada pengajuan pending.</td>
+                                <td colspan="6" class="px-4 py-8 text-center text-sm text-muted">Tidak ada pengajuan pending.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -77,7 +87,7 @@
     @if($tab === 'mine')
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <x-ui.card>
-                <h3 class="text-sm font-semibold text-text mb-3">Ajukan Cuti / Izin (HoD)</h3>
+                <h3 class="text-sm font-semibold text-text mb-3">Ajukan Off (HoD)</h3>
 
                 <form class="space-y-4" wire:submit.prevent="submit">
                     <div>
@@ -92,12 +102,12 @@
 
                     <div>
                         <label class="label">Tipe <span class="text-danger">*</span></label>
-                        <input
-                            type="text"
-                            class="input"
-                            placeholder="Contoh: Cuti Tahunan / Izin Sakit / Izin Pribadi"
-                            wire:model.live="type"
-                        />
+                        <select class="input" wire:model.live="type">
+                            <option value="">Pilih tipe...</option>
+                            <option value="cuti">Cuti (ambil cuti)</option>
+                            <option value="izin">Izin (penugasan > 1 hari)</option>
+                            <option value="skip">Skip (penugasan 1 hari)</option>
+                        </select>
                         @error('type') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
 
@@ -124,9 +134,16 @@
                         @error('reason') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
 
+                    <div>
+                        <label class="label">Lampiran <span class="text-danger">*</span></label>
+                        <input type="file" class="input" wire:model="attachment" />
+                        <p class="text-sm text-muted mt-1">Wajib. Maks 50MB.</p>
+                        @error('attachment') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
+                    </div>
+
                     <button type="submit" class="btn-primary w-full" wire:loading.attr="disabled" wire:target="submit">
                         <span wire:loading.remove wire:target="submit">Kirim Pengajuan</span>
-                        <span wire:loading wire:target="submit">Mengirim…</span>
+                        <span wire:loading wire:target="submit">Mengirim...</span>
                     </button>
                 </form>
             </x-ui.card>
