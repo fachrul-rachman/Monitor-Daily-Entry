@@ -46,8 +46,12 @@
                         @if($canManageBigRock)
                             <div class="flex items-center gap-1" x-data="{ menuOpen: false }">
                                 <div class="relative">
-                                    <button type="button" @click.stop="menuOpen = !menuOpen" class="p-1 rounded hover:bg-app-bg text-muted hover:text-text">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01"/></svg>
+                                    <button type="button" @click.stop="menuOpen = !menuOpen" class="p-2 rounded-lg hover:bg-app-bg text-text/70 hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/30">
+                                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                            <circle cx="12" cy="5" r="1.7" />
+                                            <circle cx="12" cy="12" r="1.7" />
+                                            <circle cx="12" cy="19" r="1.7" />
+                                        </svg>
                                     </button>
                                     <div x-show="menuOpen" @click.away="menuOpen = false" class="absolute right-0 mt-1 w-40 bg-surface border border-border rounded-lg shadow-lg z-10 py-1" style="display:none;">
                                         <button type="button" class="w-full text-left px-3 py-2 text-sm text-text hover:bg-app-bg"
