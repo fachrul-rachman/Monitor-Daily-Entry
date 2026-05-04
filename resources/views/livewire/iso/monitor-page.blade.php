@@ -30,14 +30,6 @@
                     @endforeach
                 </select>
             </div>
-            <div class="w-40">
-                <label class="label">Role</label>
-                <select class="input" wire:model="role">
-                    <option value="">Semua</option>
-                    <option value="hod">HoD</option>
-                    <option value="manager">Manager</option>
-                </select>
-            </div>
             <div class="w-52">
                 <label class="label">Status</label>
                 <select class="input" wire:model="status">
@@ -70,9 +62,10 @@
                     <tr class="bg-app-bg border-b border-border">
                         <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">User</th>
                         <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Divisi</th>
-                        <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Role</th>
                         <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Missing</th>
                         <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Late</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Planning</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Realisasi</th>
                         <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Findings</th>
                         <th class="text-left px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Big Rock / Roadmap</th>
                         <th class="text-right px-4 py-3 text-sm font-semibold text-muted uppercase tracking-wide">Detail</th>
@@ -86,7 +79,6 @@
                                 <p class="text-sm text-muted">{{ $r['label'] }}</p>
                             </td>
                             <td class="px-4 py-3.5 text-text">{{ $r['division'] }}</td>
-                            <td class="px-4 py-3.5 text-text">{{ strtoupper($r['role']) }}</td>
                             <td class="px-4 py-3.5">
                                 <span class="{{ ($r['missing'] ?? 0) > 0 ? 'badge-danger' : 'badge-muted' }}">{{ $r['missing'] ?? 0 }}</span>
                             </td>
@@ -95,13 +87,19 @@
                                     {{ ($r['late_plan'] ?? 0) + ($r['late_real'] ?? 0) }}
                                 </span>
                             </td>
+                            <td class="px-4 py-3.5">
+                                <span class="{{ ($r['planning'] ?? 0) > 0 ? 'badge-primary' : 'badge-muted' }}">{{ $r['planning'] ?? 0 }}</span>
+                            </td>
+                            <td class="px-4 py-3.5">
+                                <span class="{{ ($r['realization'] ?? 0) > 0 ? 'badge-primary' : 'badge-muted' }}">{{ $r['realization'] ?? 0 }}</span>
+                            </td>
                             <td class="px-4 py-3.5 text-text">
                                 <span class="badge-danger">High: {{ $r['find_high'] ?? 0 }}</span>
                                 <span class="badge-warning ml-1">Med: {{ $r['find_med'] ?? 0 }}</span>
                             </td>
                             <td class="px-4 py-3.5 text-text">
-                                <span class="badge-primary">{{ $r['touched_big_rocks'] ?? 0 }} BR</span>
-                                <span class="badge-muted ml-1">{{ $r['touched_roadmaps'] ?? 0 }} RM</span>
+                                <span class="badge-primary">{{ $r['total_big_rocks'] ?? 0 }} BR</span>
+                                <span class="badge-muted ml-1">{{ $r['total_roadmaps'] ?? 0 }} RM</span>
                             </td>
                             <td class="px-4 py-3.5 text-right">
                                 <button type="button" class="btn-secondary px-4" wire:click="openDetail({{ $r['id'] }})">Buka</button>
@@ -109,7 +107,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-4 py-10 text-center text-sm text-muted">Tidak ada data.</td>
+                            <td colspan="9" class="px-4 py-10 text-center text-sm text-muted">Tidak ada data.</td>
                         </tr>
                     @endforelse
                 </tbody>

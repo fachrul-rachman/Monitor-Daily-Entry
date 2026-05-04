@@ -505,6 +505,10 @@ class MonitorPage extends Component
         $missingByUser = [];
         $findHighByUser = [];
         $findMedByUser = [];
+        $planningByUser = [];
+        $realizationByUser = [];
+        $totalBigRocksByUser = [];
+        $totalRoadmapsByUser = [];
         $touchedBigRocksByUser = [];
         $touchedRoadmapsByUser = [];
 
@@ -517,6 +521,26 @@ class MonitorPage extends Component
                 ->groupBy('user_id')
                 ->get()
                 ->mapWithKeys(fn ($r) => [(int) $r->user_id => ['plan' => (int) $r->plan_late, 'real' => (int) $r->real_late]])
+                ->all();
+
+            $planningByUser = DailyEntry::query()
+                ->whereIn('user_id', $userIds)
+                ->whereBetween('entry_date', [$from, $to])
+                ->whereNotNull('plan_submitted_at')
+                ->selectRaw('user_id, count(*) as c')
+                ->groupBy('user_id')
+                ->pluck('c', 'user_id')
+                ->map(fn ($v) => (int) $v)
+                ->all();
+
+            $realizationByUser = DailyEntry::query()
+                ->whereIn('user_id', $userIds)
+                ->whereBetween('entry_date', [$from, $to])
+                ->whereNotNull('realization_submitted_at')
+                ->selectRaw('user_id, count(*) as c')
+                ->groupBy('user_id')
+                ->pluck('c', 'user_id')
+                ->map(fn ($v) => (int) $v)
                 ->all();
 
             $missingByUser = Finding::query()
@@ -552,6 +576,26 @@ class MonitorPage extends Component
                 ->map(fn ($v) => (int) $v)
                 ->all();
 
+            $totalBigRocksByUser = BigRock::query()
+                ->whereIn('user_id', $userIds)
+                ->where('status', '!=', 'archived')
+                ->selectRaw('user_id, count(*) as c')
+                ->groupBy('user_id')
+                ->pluck('c', 'user_id')
+                ->map(fn ($v) => (int) $v)
+                ->all();
+
+            $totalRoadmapsByUser = RoadmapItem::query()
+                ->join('big_rocks', 'big_rocks.id', '=', 'roadmap_items.big_rock_id')
+                ->whereIn('big_rocks.user_id', $userIds)
+                ->where('big_rocks.status', '!=', 'archived')
+                ->where('roadmap_items.status', '!=', 'archived')
+                ->selectRaw('big_rocks.user_id as user_id, count(*) as c')
+                ->groupBy('big_rocks.user_id')
+                ->pluck('c', 'user_id')
+                ->map(fn ($v) => (int) $v)
+                ->all();
+
             $touchedBigRocksByUser = DailyEntryItem::query()
                 ->join('daily_entries', 'daily_entries.id', '=', 'daily_entry_items.daily_entry_id')
                 ->whereIn('daily_entries.user_id', $userIds)
@@ -575,11 +619,15 @@ class MonitorPage extends Component
                 ->all();
         }
 
-        $rows = $users->map(function (User $u) use ($lateByUser, $missingByUser, $findHighByUser, $findMedByUser, $touchedBigRocksByUser, $touchedRoadmapsByUser) {
+        $rows = $users->map(function (User $u) use ($lateByUser, $missingByUser, $findHighByUser, $findMedByUser, $planningByUser, $realizationByUser, $totalBigRocksByUser, $totalRoadmapsByUser, $touchedBigRocksByUser, $touchedRoadmapsByUser) {
             $late = $lateByUser[$u->id] ?? ['plan' => 0, 'real' => 0];
             $missing = (int) ($missingByUser[$u->id] ?? 0);
             $high = (int) ($findHighByUser[$u->id] ?? 0);
             $med = (int) ($findMedByUser[$u->id] ?? 0);
+            $planning = (int) ($planningByUser[$u->id] ?? 0);
+            $realization = (int) ($realizationByUser[$u->id] ?? 0);
+            $totalBigRocks = (int) ($totalBigRocksByUser[$u->id] ?? 0);
+            $totalRoadmaps = (int) ($totalRoadmapsByUser[$u->id] ?? 0);
 
             $anyLate = ((int) ($late['plan'] ?? 0)) + ((int) ($late['real'] ?? 0));
 
@@ -599,6 +647,10 @@ class MonitorPage extends Component
                 'late_real' => (int) ($late['real'] ?? 0),
                 'find_high' => $high,
                 'find_med' => $med,
+                'planning' => $planning,
+                'realization' => $realization,
+                'total_big_rocks' => $totalBigRocks,
+                'total_roadmaps' => $totalRoadmaps,
                 'touched_big_rocks' => (int) ($touchedBigRocksByUser[$u->id] ?? 0),
                 'touched_roadmaps' => (int) ($touchedRoadmapsByUser[$u->id] ?? 0),
                 'label' => $label,
