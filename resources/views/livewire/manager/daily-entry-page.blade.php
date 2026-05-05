@@ -330,6 +330,45 @@
                     </div>
                 @endif
 
+                @if(! empty($items))
+                    <div class="rounded-xl border border-border bg-app-bg px-4 py-3 mb-4">
+                        <p class="text-sm font-semibold text-text">Ringkasan Plan Hari Ini</p>
+                        <p class="text-sm text-muted mt-1">Berikut status realisasi per rencana.</p>
+
+                        <div class="mt-3 space-y-2">
+                            @foreach($items as $it)
+                                @php
+                                    $st = (string) ($it['status'] ?? '');
+                                    $label = match ($st) {
+                                        'done' => 'Selesai',
+                                        'partial' => 'Sebagian',
+                                        'not_done' => 'Tidak dikerjakan',
+                                        'blocked' => 'Blocked',
+                                        default => 'Belum diisi',
+                                    };
+                                    $tone = match ($st) {
+                                        'done' => 'text-success',
+                                        'partial' => 'text-warning',
+                                        'not_done', 'blocked' => 'text-danger',
+                                        default => 'text-muted',
+                                    };
+                                @endphp
+                                <div class="rounded-lg border border-border bg-white/5 px-3 py-2">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <p class="text-sm font-semibold text-text truncate">{{ $it['title'] }}</p>
+                                            <p class="text-xs text-muted mt-0.5 truncate">
+                                                {{ $it['big_rock'] ?: '-' }} @if(! empty($it['roadmap'])) → {{ $it['roadmap'] }} @endif
+                                            </p>
+                                        </div>
+                                        <p class="text-xs font-semibold whitespace-nowrap {{ $tone }}">{{ $label }}</p>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 @if($realizationWindowBefore)
                     <div class="rounded-xl border border-border bg-app-bg px-4 py-3 mb-4">
                         <p class="text-sm font-semibold text-text">Realisasi belum dibuka</p>

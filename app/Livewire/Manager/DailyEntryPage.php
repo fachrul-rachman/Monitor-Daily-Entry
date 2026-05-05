@@ -367,7 +367,11 @@ class DailyEntryPage extends Component
             return;
         }
 
-        $this->realizationStatus = $item->realization_status ?: 'done';
+        // Default DB value is "draft" (not a selectable status in the UI).
+        // Treat it as "done" so first submit works without forcing user to toggle status.
+        $this->realizationStatus = $item->realization_status !== 'draft'
+            ? ($item->realization_status ?: 'done')
+            : 'done';
         $this->realizationText = $item->realization_text ?: '';
         $this->realizationReason = $item->realization_reason ?: '';
         $this->currentAttachmentPath = $item->realization_attachment_path;
