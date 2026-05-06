@@ -165,7 +165,7 @@
 
                     {{-- Roadmap --}}
                     <div>
-                        <label class="label">Roadmap</label>
+                        <label class="label">Roadmap <span class="text-danger">*</span></label>
                         <select
                             class="input"
                             wire:model="roadmapItemId"
@@ -178,7 +178,7 @@
                             @endforeach
                         </select>
                         @if(! empty($bigRocks) && empty($roadmapItems) && $bigRockId)
-                            <p class="text-sm text-muted mt-1">Big Rock ini belum memiliki roadmap. Anda tetap bisa mengisi plan.</p>
+                            <p class="text-sm text-warning mt-1">Big Rock ini belum memiliki roadmap. Tambahkan roadmap terlebih dahulu.</p>
                         @endif
                         @error('roadmapItemId') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
@@ -255,7 +255,7 @@
                             wire:click="savePlan"
                             wire:target="savePlan"
                             wire:loading.attr="disabled"
-                            @disabled($planWindowBefore || empty($bigRocks))
+                            @disabled($planWindowBefore || empty($bigRocks) || ! $roadmapItemId)
                         >
                             <span wire:loading.remove wire:target="savePlan">
                                 Simpan Rencana

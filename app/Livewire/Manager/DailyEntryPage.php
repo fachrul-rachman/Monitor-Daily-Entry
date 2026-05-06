@@ -402,13 +402,33 @@ class DailyEntryPage extends Component
             'planRelationReason' => 'required|string',
             'planDurationValue' => 'required|integer|min:1',
             'planDurationUnit' => 'required|string|in:minutes,hours',
-            'bigRockId' => 'required|integer',
-            'roadmapItemId' => 'nullable|integer',
+            'bigRockId' => 'required|integer|exists:big_rocks,id',
+            'roadmapItemId' => 'required|integer|exists:roadmap_items,id',
         ]);
 
         $planDurationMinutes = $this->durationToMinutes($data['planDurationValue'], $data['planDurationUnit']);
         if ($planDurationMinutes <= 0 || $planDurationMinutes > 1440) {
             $this->addError('planDurationValue', 'Durasi maksimal 24 jam.');
+            return;
+        }
+
+        $ownsBigRock = BigRock::query()
+            ->where('id', (int) $data['bigRockId'])
+            ->where('user_id', auth()->id())
+            ->exists();
+
+        if (! $ownsBigRock) {
+            $this->addError('bigRockId', 'Big Rock tidak valid.');
+            return;
+        }
+
+        $roadmapValid = RoadmapItem::query()
+            ->where('id', (int) $data['roadmapItemId'])
+            ->where('big_rock_id', (int) $data['bigRockId'])
+            ->exists();
+
+        if (! $roadmapValid) {
+            $this->addError('roadmapItemId', 'Roadmap tidak valid untuk Big Rock yang dipilih.');
             return;
         }
 
