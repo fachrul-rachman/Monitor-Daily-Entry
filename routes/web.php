@@ -75,6 +75,7 @@ Route::prefix('hod')
         Route::get('/big-rock', \App\Livewire\Shared\BigRockPage::class)->name('big-rock');
         Route::get('/security', \App\Livewire\Shared\ChangePasswordPage::class)->name('security');
         Route::get('/leave', \App\Livewire\Hod\LeaveRequestPage::class)->name('leave');
+        Route::get('/leave-history', \App\Livewire\Hod\LeaveHistoryPage::class)->name('leave-history');
         Route::get('/division-entries', \App\Livewire\Hod\DivisionEntriesPage::class)->name('division-entries');
         Route::get('/team-big-rock', \App\Livewire\Hod\TeamBigRockPage::class)->name('team-big-rock');
         Route::view('/division-summary', 'livewire.hod.division-summary-page')->name('division-summary');
@@ -101,6 +102,7 @@ Route::prefix('iso')
     ->group(function () {
         Route::get('/monitor', \App\Livewire\Iso\MonitorPage::class)->name('monitor');
         Route::get('/leave', \App\Livewire\Iso\LeaveApprovalPage::class)->name('leave');
+        Route::get('/leave-history', \App\Livewire\Iso\LeaveHistoryPage::class)->name('leave-history');
         Route::get('/security', \App\Livewire\Shared\ChangePasswordPage::class)->name('security');
     });
 

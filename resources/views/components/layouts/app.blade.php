@@ -170,6 +170,10 @@
 	                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
 	                    Pengajuan Off
 	                </a>
+	                <a href="{{ route('hod.leave-history') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'hod.leave-history' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
+	                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+	                    History Off
+	                </a>
 
 	                <p class="px-4 py-2 mt-4 text-sm uppercase tracking-widest text-sidebar-section">Tools</p>
 
@@ -213,6 +217,10 @@
                 <a href="{{ route('iso.leave') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'iso.leave' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-3-9a9 9 0 100 18 9 9 0 000-18z"/></svg>
                     Approval Off
+                </a>
+                <a href="{{ route('iso.leave-history') }}" class="flex items-center gap-2.5 px-4 py-2 mx-2 rounded-lg text-sm {{ $currentRoute === 'iso.leave-history' ? 'bg-sidebar-active-bg text-sidebar-active-text' : 'text-sidebar-text hover:bg-white/5' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    History Off
                 </a>
             @endif
         </nav>
