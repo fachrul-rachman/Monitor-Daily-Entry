@@ -24,6 +24,22 @@ class DiscordDailySummaryService
 {
     private const RETRY_COOLDOWN_MINUTES = 10;
 
+    /**
+     * @return array<int,string>
+     */
+    private function mainWebhooks(ReportSetting $setting): array
+    {
+        $primary = trim((string) ($setting->discord_webhook_url ?? ''));
+        $secondary = trim((string) ($setting->discord_webhook_url_secondary ?? ''));
+
+        $urls = array_values(array_filter([$primary, $secondary], fn ($v) => $v !== ''));
+        if (count($urls) <= 1) {
+            return $urls;
+        }
+
+        return array_values(array_unique($urls));
+    }
+
     public function sendIfDue(?Carbon $now = null): void
     {
         $now = $now ?: Carbon::now();
@@ -33,8 +49,7 @@ class DiscordDailySummaryService
             return;
         }
 
-        $mainWebhook = trim((string) ($setting->discord_webhook_url ?? ''));
-        if ($mainWebhook === '') {
+        if ($this->mainWebhooks($setting) === []) {
             return;
         }
 
@@ -60,8 +75,8 @@ class DiscordDailySummaryService
             return;
         }
 
-        $mainWebhook = trim((string) ($setting->discord_webhook_url ?? ''));
-        if ($mainWebhook === '') {
+        $mainWebhooks = $this->mainWebhooks($setting);
+        if ($mainWebhooks === []) {
             return;
         }
 
@@ -255,7 +270,19 @@ class DiscordDailySummaryService
         );
 
         try {
-            app(DiscordWebhookClient::class)->send($mainWebhook, ['content' => $mainContent]);
+            $errors = [];
+            foreach ($mainWebhooks as $idx => $url) {
+                try {
+                    app(DiscordWebhookClient::class)->send($url, ['content' => $mainContent]);
+                } catch (\Throwable $e) {
+                    $n = $idx + 1;
+                    $errors[] = "Webhook #{$n}: ".$e->getMessage();
+                }
+            }
+
+            if (! empty($errors)) {
+                throw new \RuntimeException(implode(' | ', $errors));
+            }
 
             $mainLog->status = 'sent';
             $mainLog->sent_at = now();

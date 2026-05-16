@@ -20,6 +20,7 @@ class ReportSetting extends Model
         'discord_enabled',
         'discord_summary_time',
         'discord_webhook_url',
+        'discord_webhook_url_secondary',
     ];
 
     protected $casts = [
@@ -52,6 +53,7 @@ class ReportSetting extends Model
             'discord_enabled' => false,
             'discord_summary_time' => '20:00',
             'discord_webhook_url' => null,
+            'discord_webhook_url_secondary' => null,
         ]);
 
         return $created;

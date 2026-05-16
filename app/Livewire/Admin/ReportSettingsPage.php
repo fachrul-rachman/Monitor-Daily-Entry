@@ -21,6 +21,8 @@ class ReportSettingsPage extends Component
 
     public string $discordWebhookUrl = '';
 
+    public string $discordWebhookUrlSecondary = '';
+
     public array $currentSettings = [];
 
     public bool $hasWarning = false;
@@ -39,6 +41,7 @@ class ReportSettingsPage extends Component
 
         $this->discordEnabled = (bool) ($setting->discord_enabled ?? false);
         $this->discordWebhookUrl = (string) ($setting->discord_webhook_url ?? '');
+        $this->discordWebhookUrlSecondary = (string) ($setting->discord_webhook_url_secondary ?? '');
 
         $this->refreshCurrentSettings();
         $this->evaluateWarning();
@@ -53,6 +56,7 @@ class ReportSettingsPage extends Component
             'realizationCloseTime' => 'required|date_format:H:i',
             'discordEnabled' => 'boolean',
             'discordWebhookUrl' => 'nullable|string|max:2000',
+            'discordWebhookUrlSecondary' => 'nullable|string|max:2000',
         ];
     }
 
@@ -87,6 +91,7 @@ class ReportSettingsPage extends Component
         $setting->realization_close_time = $this->realizationCloseTime;
         $setting->discord_enabled = (bool) $this->discordEnabled;
         $setting->discord_webhook_url = trim($this->discordWebhookUrl) !== '' ? trim($this->discordWebhookUrl) : null;
+        $setting->discord_webhook_url_secondary = trim($this->discordWebhookUrlSecondary) !== '' ? trim($this->discordWebhookUrlSecondary) : null;
         $setting->is_active = true;
         $setting->effective_from = $setting->effective_from ?? now()->toDateString();
         $setting->save();
@@ -106,8 +111,8 @@ class ReportSettingsPage extends Component
             return;
         }
 
-        if (trim($this->discordWebhookUrl) === '') {
-            $this->dispatch('toast', message: 'Webhook URL belum diisi. Isi dulu agar bisa test kirim.', type: 'danger');
+        if (trim($this->discordWebhookUrl) === '' && trim($this->discordWebhookUrlSecondary) === '') {
+            $this->dispatch('toast', message: 'Webhook URL channel utama belum diisi (isi minimal 1) agar bisa test kirim.', type: 'danger');
 
             return;
         }
@@ -132,9 +137,9 @@ class ReportSettingsPage extends Component
         } elseif ($this->realizationCloseTime <= $this->realizationOpenTime) {
             $this->hasWarning = true;
             $this->warningMessage = 'Jam tutup realisasi harus lebih besar dari jam buka.';
-        } elseif ($this->discordEnabled && trim($this->discordWebhookUrl) === '') {
+        } elseif ($this->discordEnabled && trim($this->discordWebhookUrl) === '' && trim($this->discordWebhookUrlSecondary) === '') {
             $this->hasWarning = true;
-            $this->warningMessage = 'Discord diaktifkan, tapi webhook URL belum diisi.';
+            $this->warningMessage = 'Discord diaktifkan, tapi webhook URL channel utama belum diisi (isi minimal 1).';
         }
     }
 

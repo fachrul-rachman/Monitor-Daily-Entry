@@ -95,6 +95,12 @@
                         <input type="text" class="input @error('discordWebhookUrl') input-error @enderror" placeholder="https://discord.com/api/webhooks/..." wire:model.live="discordWebhookUrl" />
                         @error('discordWebhookUrl') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
                     </div>
+
+                    <div class="md:col-span-2">
+                        <label class="label">Webhook URL (Channel Utama #2) <span class="text-muted font-normal">(opsional)</span></label>
+                        <input type="text" class="input @error('discordWebhookUrlSecondary') input-error @enderror" placeholder="https://discord.com/api/webhooks/..." wire:model.live="discordWebhookUrlSecondary" />
+                        @error('discordWebhookUrlSecondary') <p class="text-sm text-danger mt-1">{{ $message }}</p> @enderror
+                    </div>
                 </div>
 
                 <p class="text-sm text-muted mt-2">Webhook ini khusus rekap channel utama; webhook per-user diatur dari halaman Users.</p>
